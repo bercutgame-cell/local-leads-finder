@@ -1,0 +1,98 @@
+const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
+const API_OVERPASS = "https://overpass-api.de/api/interpreter";
+const $ = (id) => document.getElementById(id);
+const state = { results: [], saved: loadSaved() };
+const categories = {
+  beauty: ['shop~"beauty|hairdresser|massage|tattoo|perfumery"','amenity~"beauty_salon|barber"'],
+  food: ['amenity~"restaurant|cafe|fast_food|bar|pub|food_court"','shop~"bakery|pastry|coffee|confectionery"'],
+  auto: ['shop~"car_repair|tyres|car"','amenity~"car_wash|fuel"'],
+  health: ['amenity~"doctors|dentist|clinic|hospital|pharmacy|veterinary"','healthcare'],
+  construction: ['craft~"plumber|electrician|carpenter|painter|roofer|builder|hvac|tiler"','office~"construction|architect"'],
+  fitness: ['leisure~"fitness_centre|sports_centre|sports_hall|pitch"','sport'],
+  education: ['amenity~"school|college|language_school|music_school|kindergarten"','office~"educational_institution"'],
+  lodging: ['tourism~"hotel|guest_house|motel|hostel|apartment"'],
+  professional: ['office~"lawyer|accountant|estate_agent|insurance|consulting|company|financial|employment_agency"','craft'],
+  retail: ['shop'],
+  all: ['amenity','shop','office','craft','tourism','leisure','healthcare']
+};
+const categoryNames = Object.fromEntries([...$('category').options].map(o=>[o.value,o.textContent]));
+function loadSaved(){try{return JSON.parse(localStorage.getItem('leadscout_saved')||'[]')}catch{return []}}
+function persist(){localStorage.setItem('leadscout_saved',JSON.stringify(state.saved));renderSaved();$('savedCount').textContent=state.saved.length}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2300)}
+function setStatus(msg){$('searchStatus').textContent=msg}
+function tagValue(tags,keys){for(const k of keys){if(tags[k])return tags[k]}return ''}
+function siteUrl(v){if(!v)return '';let s=v.trim();if(!/^https?:\/\//i.test(s))s='https://'+s;try{return new URL(s).href}catch{return ''}}
+function extract(el){
+  const t=el.tags||{},name=t.name||t.brand||t.operator||'Без названия';
+  const website=tagValue(t,['website','contact:website','url']);
+  const phone=tagValue(t,['phone','contact:phone','mobile']);
+  const email=tagValue(t,['email','contact:email']);
+  const address=[t['addr:street'],t['addr:housenumber'],t['addr:city']].filter(Boolean).join(', ')||'Адрес не указан в OpenStreetMap';
+  const social={vk:tagValue(t,['contact:vk','vk']),telegram:tagValue(t,['contact:telegram','telegram']),instagram:tagValue(t,['contact:instagram','instagram'])};
+  const lat=el.lat??el.center?.lat,lon=el.lon??el.center?.lon;
+  const osmType=el.type==='node'?'node':el.type;
+  return {id:'osm-'+osmType+'-'+el.id,name,category:tagValue(t,['shop','amenity','office','craft','tourism','leisure','healthcare'])||'Компания',address,website:siteUrl(website),phone,email,social,lat,lon,osmUrl:'https://www.openstreetmap.org/'+osmType+'/'+el.id,source:'OpenStreetMap',status:'Новый',note:'',addedAt:new Date().toISOString()};
+}
+async function search(){
+  const city=$('city').value.trim(),category=$('category').value,radius=Number($('radius').value);
+  if(!city){setStatus('Укажи город.');return}
+  $('searchBtn').disabled=true;$('searchBtn').textContent='Ищем…';setStatus('Определяем координаты города…');
+  try{
+    const geo=await fetch(API_NOMINATIM+'?format=jsonv2&limit=1&q='+encodeURIComponent(city),{headers:{'Accept-Language':'ru'}});
+    if(!geo.ok)throw new Error('Не удалось обратиться к геокодеру. Попробуй позже.');
+    const places=await geo.json();if(!places.length)throw new Error('Город не найден. Уточни название.');
+    const {lat,lon,display_name}=places[0];setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
+    const filters=categories[category]||categories.all;
+    const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
+    const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
+    const response=await fetch(API_OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)});
+    if(!response.ok)throw new Error('Картографический сервер временно недоступен ('+response.status+'). Повтори поиск через минуту.');
+    const data=await response.json();
+    const seen=new Set();state.results=data.elements.map(extract).filter(x=>x.name!=='Без названия').filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true}).sort((a,b)=>Number(!a.website)-Number(!b.website));
+    renderResults();const missing=state.results.filter(x=>!x.website).length;
+    setStatus('Готово: найдено '+state.results.length+' компаний. Без указанного сайта: '+missing+'.');
+  }catch(e){setStatus(e.message||'Ошибка поиска.');}
+  finally{$('searchBtn').disabled=false;$('searchBtn').innerHTML='<span>⌕</span> Найти компании'}
+}
+function messageFor(lead){
+ return 'Здравствуйте! Нашёл вашу компанию «'+lead.name+'» и хотел предложить идею по привлечению новых клиентов.\n\nЯ занимаюсь созданием современных лендингов для бизнеса. Такой сайт помогает показать услуги, цены, преимущества и получать обращения из рекламы и поиска.\n\nЕсли вам актуально, могу бесплатно предложить пару идей, как можно улучшить онлайн-презентацию вашей компании. Интересно обсудить?';
+}
+function card(lead){
+ const saved=state.saved.some(x=>x.id===lead.id),site=lead.website?'<a href="'+esc(lead.website)+'" target="_blank" rel="noopener">Сайт ↗</a>':'<span>Сайт не указан</span>';
+ const phone=lead.phone?'<a href="tel:'+esc(lead.phone)+'">'+esc(lead.phone)+'</a>':'';
+ const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
+ const links=[site,phone,email].filter(Boolean).join(' · ');
+ return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions"><button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
+}
+function renderResults(){
+ const term=$('filterInput').value.toLowerCase(),wf=$('websiteFilter').value;
+ const filtered=state.results.filter(x=>(x.name+' '+x.address).toLowerCase().includes(term)&&(wf==='all'||(wf==='missing'?!x.website:!!x.website)));
+ $('results').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="empty-state"><h3>Ничего не найдено</h3><p>Измени фильтр или параметры поиска.</p></div>';
+ $('resultCount').textContent='Показано '+filtered.length+' из '+state.results.length;
+ $('missingCount').textContent=state.results.filter(x=>!x.website).length+' без указанного сайта';
+}
+function saveLead(id){const lead=state.results.find(x=>x.id===id);if(!lead)return;if(state.saved.some(x=>x.id===id)){toast('Уже есть в базе');return}state.saved.unshift({...lead});persist();renderResults();toast('Компания сохранена в твоей базе')}
+function renderSaved(){
+ $('savedCount').textContent=state.saved.length;
+ $('savedLeads').innerHTML=state.saved.length?state.saved.map(x=>'<div class="saved-row"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.address)+' · '+(x.website?'Сайт указан':'Сайт не указан')+' · '+esc(x.status||'Новый')+'</small></div><div><button class="mini-btn" data-outreach="'+esc(x.id)+'">Связаться</button> <button class="mini-btn" data-remove="'+esc(x.id)+'">Удалить</button></div></div>').join(''):'<p class="muted">Пока ничего не сохранено.</p>';
+}
+function exportCSV(){
+ if(!state.saved.length){toast('Сначала сохрани компании');return}
+ const cols=['Название','Категория','Адрес','Телефон','Email','Сайт','VK','Telegram','Источник','Ссылка на карту','Статус'];
+ const rows=state.saved.map(x=>[x.name,x.category,x.address,x.phone,x.email,x.website,x.social?.vk,x.social?.telegram,x.source,x.osmUrl,x.status]);
+ const csv='\uFEFF'+[cols,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='leadscout-leads.csv';a.click();URL.revokeObjectURL(url);
+}
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.save)saveLead(b.dataset.save);
+ if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
+ if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
+ if(b.dataset.outreach){const l=state.saved.find(x=>x.id===b.dataset.outreach);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован. Выбери удобный канал связи в карточке компании или найди её профиль вручную.')}}
+});
+$('searchForm').addEventListener('submit',e=>{e.preventDefault();search()});
+$('filterInput').addEventListener('input',renderResults);
+$('websiteFilter').addEventListener('change',renderResults);
+$('exportBtn').addEventListener('click',exportCSV);
+renderSaved();
