@@ -115,8 +115,17 @@ async function search(){
 function profileUrl(value,platform){
  if(!value)return '';
  const raw=value.trim();
- if(raw.startsWith('http://')||raw.startsWith('https://'))return raw;
- const handle=raw.replace(/^@/,'').replaceAll('/','');
+ if(!raw)return '';
+ const isKnownDomain=/^(?:https?:\/\/)?(?:www\.)?(?:max\.ru|vk\.com|t\.me)(?:\/|$)/i.test(raw);
+ if(/^https?:\/\//i.test(raw)||isKnownDomain){
+  try{
+   const url=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);
+   if(!url.pathname||url.pathname==='/')return '';
+   return url.href;
+  }catch{return ''}
+ }
+ const handle=raw.replace(/^@/,'').replace(/^\/+|\/+$/g,'');
+ if(!handle||/^(?:www\.)?(?:max\.ru|vk\.com|t\.me)$/i.test(handle))return '';
  if(platform==='telegram')return 'https://t.me/'+handle;
  if(platform==='vk')return 'https://vk.com/'+handle;
  if(platform==='max')return 'https://max.ru/'+handle;
@@ -131,7 +140,7 @@ function card(lead){
  const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
  const links=[site,phone,email].filter(Boolean).join(' · ');
  const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
- return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<a class="mini-btn" href="https://max.ru/" target="_blank" rel="noopener">MAX ↗</a><button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
+ return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
 }
 function renderResults(){
  const term=$('filterInput').value.toLowerCase(),wf=$('websiteFilter').value;
