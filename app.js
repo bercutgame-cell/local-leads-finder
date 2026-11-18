@@ -64,23 +64,53 @@ async function requestOverpass(query){
   }
   throw new Error('Все серверы OpenStreetMap временно недоступны или перегружены. Подожди 1–2 минуты и повтори поиск.');
 }
+let progressTimer=null, searchStartedAt=0, progressValue=0;
+function showProgress(value,stage,detail=''){
+  progressValue=Math.max(progressValue,Math.min(96,value));
+  const wrap=$('searchProgress'),bar=$('progressBar'),pct=$('progressPercent');
+  wrap.hidden=false;bar.style.width=progressValue+'%';pct.textContent=Math.round(progressValue)+'%';
+  $('progressStage').textContent=stage;
+  $('progressDetail').textContent=detail;
+  $('progressElapsed').textContent='Прошло '+Math.floor((Date.now()-searchStartedAt)/1000)+' сек.';
+}
+function startProgress(){
+  searchStartedAt=Date.now();progressValue=3;showProgress(3,'Подготовка поиска','Подключаем геокодер и картографические источники');
+  clearInterval(progressTimer);
+  progressTimer=setInterval(()=>{
+    const elapsed=(Date.now()-searchStartedAt)/1000;
+    const target=Math.min(91,12+elapsed*1.25);
+    if(progressValue<target)showProgress(target,$('progressStage').textContent,'Запрос выполняется. Скорость зависит от загруженности серверов');
+    $('progressElapsed').textContent='Прошло '+Math.floor(elapsed)+' сек.';
+  },700);
+}
+function finishProgress(ok){
+  clearInterval(progressTimer);progressTimer=null;
+  if(ok){progressValue=100;showProgress(100,'Поиск завершён','Результаты готовы');}
+  else{$('progressStage').textContent='Поиск не завершён';$('progressDetail').textContent='Можно повторить попытку через несколько секунд';$('progressElapsed').textContent='Завершено с ошибкой';}
+}
 async function search(){
   const city=$('city').value.trim(),category=$('category').value,radius=Number($('radius').value);
   if(!city){setStatus('Укажи город.');return}
-  $('searchBtn').disabled=true;$('searchBtn').textContent='Ищем…';setStatus('Определяем координаты города…');
+  $('searchBtn').disabled=true;$('searchBtn').textContent='Ищем…';startProgress();setStatus('Определяем координаты города…');
   try{
+    showProgress(12,'Определяем местоположение','Ищем координаты: '+city);
     const geo=await fetch(API_NOMINATIM+'?format=jsonv2&limit=1&q='+encodeURIComponent(city),{headers:{'Accept-Language':'ru'}});
     if(!geo.ok)throw new Error('Не удалось обратиться к геокодеру. Попробуй позже.');
     const places=await geo.json();if(!places.length)throw new Error('Город не найден. Уточни название.');
-    const {lat,lon,display_name}=places[0];setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
+    const {lat,lon,display_name}=places[0];
+    showProgress(27,'Формируем запрос','Радиус '+(radius/1000)+' км · '+display_name);
+    setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
     const filters=categories[category]||categories.all;
     const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
     const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
+    showProgress(35,'Запрос отправлен','Ожидаем ответ картографического сервера. Процент — ориентировочная индикация, не точный таймер');
     const data=await requestOverpass(query);
+    showProgress(94,'Обрабатываем результаты','Получено объектов: '+data.elements.length);
     const seen=new Set();state.results=data.elements.map(extract).filter(x=>x.name!=='Без названия').filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true}).sort((a,b)=>Number(!a.website)-Number(!b.website));
     renderResults();const missing=state.results.filter(x=>!x.website).length;
     setStatus('Готово: найдено '+state.results.length+' компаний. Без указанного сайта: '+missing+'.');
-  }catch(e){setStatus(e.message||'Ошибка поиска.');}
+    finishProgress(true);
+  }catch(e){setStatus(e.message||'Ошибка поиска.');finishProgress(false);}
   finally{$('searchBtn').disabled=false;$('searchBtn').innerHTML='<span>⌕</span> Найти компании'}
 }
 function profileUrl(value,platform){
@@ -123,9 +153,45 @@ function exportCSV(){
  const csv='\uFEFF'+[cols,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='leadscout-leads.csv';a.click();URL.revokeObjectURL(url);
 }
+
+function siteLead(id){
+  return state.saved.find(x=>x.id===id)||state.results.find(x=>x.id===id);
+}
+function openSiteEditor(id){
+  const lead=siteLead(id);if(!lead)return;
+  const cfg=lead.siteDraft||{};
+  $('siteEditor').hidden=false;
+  $('siteLeadId').value=id;
+  $('siteName').value=cfg.siteName||('Сайт '+lead.name);
+  $('siteTitle').value=cfg.title||('Услуги компании '+lead.name);
+  $('sitePhone').value=cfg.phone??lead.phone??'';
+  $('siteEmail').value=cfg.email??lead.email??'';
+  $('siteAddress').value=cfg.address??lead.address??'';
+  $('siteDescription').value=cfg.description||('Расскажите о компании '+lead.name+', её преимуществах и услугах.');
+  $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
+  $('siteButton').value=cfg.button||'Оставить заявку';
+  $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Сохраните компанию в базе, чтобы не потерять изменения.';
+}
+function closeSiteEditor(){$('siteEditor').hidden=true}
+function saveSiteDraft(){
+  const id=$('siteLeadId').value;
+  let lead=state.saved.find(x=>x.id===id);
+  if(!lead){const found=state.results.find(x=>x.id===id);if(!found)return;lead={...found};state.saved.unshift(lead);}
+  lead.siteDraft={siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim()};
+  persist();renderResults();renderSaved();toast('Данные сайта сохранены отдельно для этой компании');
+}
+function downloadSiteDraft(){
+  saveSiteDraft();
+  const id=$('siteLeadId').value,lead=state.saved.find(x=>x.id===id);if(!lead?.siteDraft)return;
+  const d=lead.siteDraft,lines=d.services.split(/\r?\n/).filter(Boolean);
+  const html='<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(d.siteTitle||d.siteName)+'</title><style>body{margin:0;font:16px Arial,sans-serif;color:#182333;background:#f4f7f8}main{max-width:850px;margin:8vh auto;padding:36px;background:white;border-radius:20px}h1{font-size:38px}p,li{line-height:1.65}.btn{display:inline-block;background:#176b50;color:white;padding:14px 20px;border-radius:9px;text-decoration:none;margin-top:15px}.muted{color:#64748b}</style><main><p class="muted">'+esc(d.siteName)+'</p><h1>'+esc(d.title)+'</h1><p>'+esc(d.description)+'</p><h2>Услуги и цены</h2><ul>'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><h2>Контакты</h2><p>'+esc(d.address)+'</p>'+(d.phone?'<p><a href="tel:'+esc(d.phone)+'">'+esc(d.phone)+'</a></p>':'')+(d.email?'<p><a href="mailto:'+esc(d.email)+'">'+esc(d.email)+'</a></p>':'')+(d.phone?'<a class="btn" href="tel:'+esc(d.phone)+'">'+esc(d.button||'Связаться')+'</a>':'')+'</main></html>';
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='site-'+id+'.html';a.click();URL.revokeObjectURL(url);
+}
+
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.dataset.save)saveLead(b.dataset.save);
+ if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
  if(b.dataset.outreach){const l=state.saved.find(x=>x.id===b.dataset.outreach);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован. Выбери удобный канал связи в карточке компании или найди её профиль вручную.')}}
@@ -134,4 +200,7 @@ $('searchForm').addEventListener('submit',e=>{e.preventDefault();search()});
 $('filterInput').addEventListener('input',renderResults);
 $('websiteFilter').addEventListener('change',renderResults);
 $('exportBtn').addEventListener('click',exportCSV);
+$('siteClose').addEventListener('click',closeSiteEditor);
+$('siteSave').addEventListener('click',saveSiteDraft);
+$('siteDownload').addEventListener('click',downloadSiteDraft);
 renderSaved();
