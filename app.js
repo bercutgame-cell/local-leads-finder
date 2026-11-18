@@ -119,7 +119,7 @@ function profileUrl(value,platform){
  if(!value)return '';
  const raw=value.trim();
  if(!raw)return '';
- const isKnownDomain=/^(?:https?:\/\/)?(?:www\.)?(?:max\.ru|vk\.com|t\.me)(?:\/|$)/i.test(raw);
+ const isKnownDomain=/^(?:https?:\/\/)?(?:www\.)?(?:max\.ru|vk\.com|t\.me|instagram\.com)(?:\/|$)/i.test(raw);
  if(/^https?:\/\//i.test(raw)||isKnownDomain){
   try{
    const url=new URL(/^https?:\/\//i.test(raw)?raw:'https://'+raw);
@@ -132,6 +132,7 @@ function profileUrl(value,platform){
  if(platform==='telegram')return 'https://t.me/'+handle;
  if(platform==='vk')return 'https://vk.com/'+handle;
  if(platform==='max')return 'https://max.ru/'+handle;
+  if(platform==='instagram')return 'https://www.instagram.com/'+handle+'/';
  return '';
 }
 function socialSearchUrl(platform,query){const domains={vk:'vk.com',telegram:'t.me',instagram:'instagram.com'};const domain=domains[platform];if(!domain)return '';return 'https://yandex.ru/search/?text='+encodeURIComponent('site:'+domain+' '+query)}
@@ -144,7 +145,7 @@ function card(lead){
  const phone=lead.phone?'<a href="tel:'+esc(lead.phone)+'">'+esc(lead.phone)+'</a>':'';
  const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
  const links=[site,phone,email].filter(Boolean).join(' · ');
- const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
+ const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['Instagram',lead.social?.instagram,'instagram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
  return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-contact="'+esc(lead.id)+'">Контакты</button><button class="mini-btn" data-social-search="'+esc(lead.id)+'">Найти соцсети</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
 }
 function renderResults(){
@@ -165,7 +166,7 @@ function openOutreach(id){
  $('outreachCompany').innerHTML='<strong>'+esc(lead.name)+'</strong><p>'+esc(lead.address)+'</p><div class="contact-lines">'+(lead.phone?'<a href="tel:'+esc(lead.phone)+'">Телефон: '+esc(lead.phone)+'</a>':'')+(lead.email?' <a href="mailto:'+esc(lead.email)+'">Email: '+esc(lead.email)+'</a>':'')+(lead.website?' <a href="'+esc(lead.website)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div>';
  $('outreachMessage').value=lead.outreachMessage||messageFor(lead);
  $('outreachWorkspace').dataset.leadId=id;
- const links=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']];
+ const links=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['Instagram',lead.social?.instagram,'instagram'],['MAX',lead.social?.max,'max']];
  const channels=[];
  if(lead.phone)channels.push('<a class="mini-btn" href="tel:'+esc(lead.phone)+'">Позвонить</a>');
  if(lead.email)channels.push('<a class="mini-btn" href="mailto:'+esc(lead.email)+'?subject='+encodeURIComponent('Предложение по сайту для '+lead.name)+'">Написать на email</a>');
@@ -179,8 +180,8 @@ function closeOutreach(){$('outreachWorkspace').hidden=true;}
 
 function exportCSV(){
  if(!state.saved.length){toast('Сначала сохрани компании');return}
- const cols=['Название','Категория','Адрес','Телефон','Email','Сайт','VK','Telegram','Источник','Ссылка на карту','Статус'];
- const rows=state.saved.map(x=>[x.name,x.category,x.address,x.phone,x.email,x.website,x.social?.vk,x.social?.telegram,x.source,x.osmUrl,x.status]);
+ const cols=['Название','Категория','Адрес','Телефон','Email','Сайт','VK','Telegram','Instagram','Источник','Ссылка на карту','Статус'];
+ const rows=state.saved.map(x=>[x.name,x.category,x.address,x.phone,x.email,x.website,x.social?.vk,x.social?.telegram,x.social?.instagram,x.source,x.osmUrl,x.status]);
  const csv='\uFEFF'+[cols,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='leadscout-leads.csv';a.click();URL.revokeObjectURL(url);
 }
