@@ -28,6 +28,12 @@
         <button id="searchBtn" class="button primary" type="submit"><span>⌕</span> Найти компании</button>
       </form>
       <div id="searchStatus" class="status-line" role="status">Укажи город и категорию, чтобы начать поиск.</div>
+<div id="searchProgress" class="search-progress" hidden aria-live="polite">
+  <div class="progress-top"><strong id="progressStage">Подготовка поиска</strong><span id="progressPercent">0%</span></div>
+  <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+  <div class="progress-bottom"><span id="progressDetail">Ожидаем запуск…</span><span id="progressElapsed">Прошло 0 сек.</span></div>
+  <p class="progress-hint">Процент ориентировочный: скорость ответа зависит от внешних картографических серверов.</p>
+</div>
       <p class="fine-print">Поиск использует OpenStreetMap / Overpass API. Полнота карточек зависит от того, какие сведения внесли пользователи карт. Не все компании присутствуют в базе.</p>
     </section>
     <section class="results-section">
@@ -41,7 +47,25 @@
     </section>
     <footer><span>LeadScout · MVP 0.2</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
   </main>
-  <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="app.js?v=0.2"></script>
+  <div id="siteEditor" class="modal-backdrop" hidden>
+  <section class="site-editor panel" role="dialog" aria-modal="true" aria-labelledby="siteEditorTitle">
+    <div class="section-heading"><div><span class="step">04</span><h2 id="siteEditorTitle">Сайт для компании</h2></div><button id="siteClose" class="mini-btn" type="button">Закрыть ✕</button></div>
+    <input id="siteLeadId" type="hidden"><p id="siteNotice" class="muted"></p>
+    <div class="editor-grid">
+      <label class="field"><span>Название сайта / бренда</span><input id="siteName" placeholder="Например, Студия красоты"></label>
+      <label class="field"><span>Заголовок первого экрана</span><input id="siteTitle" placeholder="Красота и забота о вас"></label>
+      <label class="field"><span>Телефон</span><input id="sitePhone" placeholder="+7…"></label>
+      <label class="field"><span>Email</span><input id="siteEmail" placeholder="mail@example.ru"></label>
+      <label class="field full"><span>Адрес</span><input id="siteAddress" placeholder="Адрес компании"></label>
+      <label class="field full"><span>Общее описание и преимущества</span><textarea id="siteDescription" rows="4"></textarea></label>
+      <label class="field full"><span>Услуги и цены (каждая строка — отдельная позиция)</span><textarea id="siteServices" rows="5" placeholder="Стрижка — от 1500 ₽&#10;Окрашивание — от 4000 ₽"></textarea></label>
+      <label class="field full"><span>Текст кнопки</span><input id="siteButton" placeholder="Оставить заявку"></label>
+    </div>
+    <p class="fine-print">Данные сохраняются отдельно для каждой компании в локальной базе этого браузера. Можно скачать HTML-черновик сайта и передать его клиенту или доработать перед публикацией.</p>
+    <div class="editor-actions"><button id="siteSave" class="button secondary" type="button">Сохранить данные</button><button id="siteDownload" class="button primary" type="button">Скачать сайт HTML</button></div>
+  </section>
+</div>
+<div id="toast" class="toast" aria-live="polite"></div>
+  <script src="app.js?v=0.3"></script>
 </body>
 </html>
