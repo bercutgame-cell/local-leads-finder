@@ -326,6 +326,7 @@ $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name,$('templateCategory').value);toast('HTML-шаблон загружен для выбранной категории')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
+const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;
 renderTemplateInfo();
 renderSaved();
 showWorkspace('searchView');
