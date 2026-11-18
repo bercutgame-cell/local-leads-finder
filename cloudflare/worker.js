@@ -114,17 +114,28 @@ export default {
       const queries = terms.slice(0, 4);
       for (const term of queries) {
         const response = await vk("groups.search", {
-          q: term, city_id: match.id, count: 40, sort: 0,
-          
+          q: term, city_id: match.id, count: 40, sort: 0
         }, env.VK_ACCESS_TOKEN);
         for (const group of (response.items || [])) {
           if (!group || !group.id || !group.name) continue;
-          const groupCity = group.city && group.city.title;
-          if (groupCity && groupCity.toLocaleLowerCase("ru") !== String(match.title).toLocaleLowerCase("ru")) continue;
-          if (!found.has(group.id)) found.set(group.id, normalizeGroup(group, match.title, input.categoryLabel || category));
+          if (!found.has(group.id)) found.set(group.id, group);
         }
       }
-      const results = Array.from(found.values())
+      let detailed = Array.from(found.values());
+      if (detailed.length) {
+        const detailsResponse = await vk("groups.getById", {
+          group_ids: detailed.map(group => group.id).join(","),
+          fields: "city,description,members_count,activity,verified,site"
+        }, env.VK_ACCESS_TOKEN);
+        if (Array.isArray(detailsResponse)) detailed = detailsResponse;
+        else if (detailsResponse && Array.isArray(detailsResponse.groups)) detailed = detailsResponse.groups;
+      }
+      const results = detailed
+        .filter(group => {
+          const groupCity = group.city && group.city.title;
+          return !groupCity || groupCity.toLocaleLowerCase("ru") === String(match.title).toLocaleLowerCase("ru");
+        })
+        .map(group => normalizeGroup(group, match.title, input.categoryLabel || category))
         .sort((a, b) => b.membersCount - a.membersCount)
         .slice(0, 120);
       return json({
