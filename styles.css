@@ -160,9 +160,10 @@ nav.workspace-nav{
 .quick-social{margin-top:16px}
 
 
-/* LeadScout VK Collector */
-.vk-collector{margin:14px 0;padding:16px;border:1px solid var(--line,#dfe4ea);border-radius:14px;background:var(--panel,#fff)}
-.vk-collector .field{margin:10px 0}
-.vk-collector .lead-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.vk-collector h3{margin:0;font-size:1rem}
-.vk-collector .button:disabled{opacity:.6;cursor:wait}
+
+/* LeadScout 2.0 — full HTML editor */
+.html-editor-field{display:grid;gap:8px;margin-top:16px}
+#siteHTML{width:100%;min-height:420px;resize:vertical;background:#07111e;border:1px solid #344b65;border-radius:12px;padding:14px;color:#dce9f7;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto;}
+#siteHTML:focus{outline:2px solid #65c99b;outline-offset:1px}
+#regenerateSiteHTML{margin-top:8px}
+@media(max-width:600px){#siteHTML{min-height:360px;font-size:11px}}
