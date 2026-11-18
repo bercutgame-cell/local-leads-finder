@@ -192,6 +192,12 @@ function buildCustomizedHTML(lead){
  const values={company_name:d.siteName||lead.name,title:d.title||lead.name,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
  return template.replace(/\\{\\{([a-z_]+)\\}\\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
 }
+function previewSiteDraft(){
+ saveSiteDraft();
+ const id=$('siteLeadId').value,lead=state.saved.find(x=>x.id===id);if(!lead)return;
+ try{const html=buildCustomizedHTML(lead),url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000)}
+ catch(e){toast(e.message)}
+}
 function downloadSiteDraft(){
  saveSiteDraft();
  const id=$('siteLeadId').value,lead=state.saved.find(x=>x.id===id);if(!lead)return;
@@ -217,6 +223,7 @@ $('exportBtn').addEventListener('click',exportCSV);
 $('siteClose').addEventListener('click',closeSiteEditor);
 $('siteSave').addEventListener('click',saveSiteDraft);
 $('siteDownload').addEventListener('click',downloadSiteDraft);
+$('sitePreview').addEventListener('click',previewSiteDraft);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name);toast('HTML-шаблон загружен')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
 renderTemplateInfo();
 renderSaved();
