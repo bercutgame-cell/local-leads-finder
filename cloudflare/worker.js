@@ -115,7 +115,7 @@ export default {
       for (const term of queries) {
         const response = await vk("groups.search", {
           q: term, city_id: match.id, count: 40, sort: 0,
-          fields: "city,description,members_count,activity,verified,site"
+          
         }, env.VK_ACCESS_TOKEN);
         for (const group of (response.items || [])) {
           if (!group || !group.id || !group.name) continue;
