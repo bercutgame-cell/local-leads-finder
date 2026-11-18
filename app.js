@@ -139,7 +139,7 @@ function card(lead){
  const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
  const links=[site,phone,email].filter(Boolean).join(' · ');
  const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
- return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
+ return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-contact="'+esc(lead.id)+'">Контакты</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
 }
 function renderResults(){
  const term=$('filterInput').value.toLowerCase(),wf=$('websiteFilter').value;
@@ -247,6 +247,12 @@ function downloadSiteDraft(){
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.dataset.save)saveLead(b.dataset.save);
+ if(b.dataset.contact){
+  const id=b.dataset.contact;
+  let lead=state.saved.find(x=>x.id===id);
+  if(!lead){const found=state.results.find(x=>x.id===id);if(found){lead={...found};state.saved.unshift(lead);persist();}}
+  if(lead){showWorkspace('clientsView');openOutreach(id);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}
+ }
  if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
