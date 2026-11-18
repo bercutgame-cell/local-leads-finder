@@ -203,7 +203,7 @@ function openSiteEditor(id){
   $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
   $('siteButton').value=cfg.button||'Оставить заявку';
   $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Полный HTML будет сохранён отдельно для этого клиента.';
-  try{$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(lead)}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
+  try{const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial)}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
 }
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
