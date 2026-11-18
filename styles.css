@@ -10,3 +10,17 @@
 .template-upload{padding:14px;margin:12px 0 18px;background:#0d1928;border:1px solid #2c4058;border-radius:12px}.template-upload input[type=file]{font-size:12px;color:var(--muted);padding:10px}.template-upload code{color:var(--green);font-size:10px}.progress-track{height:4px;border-radius:10px;background:#26364b;overflow:hidden}.progress-bar{height:100%;border-radius:10px;background:var(--green);box-shadow:0 0 12px #9ee6b455;transition:width .45s ease}
 
 .workspace-nav{display:flex;gap:9px;margin:0 0 25px;padding:7px;background:#111d2d;border:1px solid var(--line);border-radius:14px;position:sticky;top:8px;z-index:5}.workspace-tab{flex:1;border:1px solid transparent;background:transparent;color:#aebed0;padding:13px 12px;border-radius:10px;font:700 12px 'DM Sans';cursor:pointer}.workspace-tab.active{background:#20364a;border-color:#42614f;color:var(--green)}.workspace-view[hidden]{display:none!important}.template-workspace{max-width:850px;margin:0 auto 35px}.template-intro{font-size:13px;color:#c0cede;line-height:1.7;max-width:680px}.template-workspace input[type=file]{display:block;margin-top:10px;width:100%;background:#0d1726;border:1px solid #304057;border-radius:10px;padding:13px;color:var(--text)}.template-current{margin:16px 0}.template-next{display:flex;flex-direction:column;gap:6px;margin-top:24px;padding:16px;background:#0d1928;border:1px solid #2c4058;border-radius:12px;font-size:12px;color:#b9c9d9}.template-next strong{color:var(--green)}@media(max-width:600px){.workspace-nav{gap:4px;padding:5px}.workspace-tab{font-size:10px;padding:11px 5px}.template-workspace{padding:17px}}
+
+/* Bottom navigation */
+body{padding-bottom:105px}
+.layout{padding-bottom:115px}
+.workspace-nav{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;width:min(560px,calc(100% - 28px));margin:0;padding:8px;gap:8px;background:rgba(10,20,33,.96);border:1px solid #35475d;border-radius:18px;box-shadow:0 12px 38px #0008;backdrop-filter:blur(18px)}
+.workspace-tab{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:62px;padding:7px 5px;color:#9aacc1;font-size:11px;font-weight:700;letter-spacing:.1px}
+.workspace-tab svg{width:23px;height:23px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.workspace-tab.active{background:#203b36;border-color:#456b59;color:#baf0ca}
+.outreach-workspace{margin-top:25px;padding:20px;border:1px solid #36516a;border-radius:15px;background:#101e2d}
+.outreach-company{padding:12px 0 17px}.outreach-company strong{font:700 15px Manrope}.outreach-company p{font-size:11px;color:var(--muted)}
+.outreach-workspace textarea{width:100%;resize:vertical;background:#0d1726;border:1px solid #304057;border-radius:10px;padding:13px;color:var(--text);font:13px 'DM Sans';line-height:1.6}
+.outreach-channels{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.outreach-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+@media(max-width:600px){body{padding-bottom:100px}.layout{padding-bottom:105px}.workspace-nav{bottom:max(8px,env(safe-area-inset-bottom));width:calc(100% - 20px);border-radius:16px}.workspace-tab{min-height:58px;font-size:10px}.workspace-tab svg{width:22px;height:22px}.outreach-workspace{padding:15px}.outreach-actions{flex-direction:column}.outreach-actions button{width:100%}}
