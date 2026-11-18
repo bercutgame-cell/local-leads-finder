@@ -29,7 +29,7 @@ function extract(el){
   const phone=tagValue(t,['phone','contact:phone','mobile']);
   const email=tagValue(t,['email','contact:email']);
   const address=[t['addr:street'],t['addr:housenumber'],t['addr:city']].filter(Boolean).join(', ')||'Адрес не указан в OpenStreetMap';
-  const social={vk:tagValue(t,['contact:vk','vk']),telegram:tagValue(t,['contact:telegram','telegram']),instagram:tagValue(t,['contact:instagram','instagram'])};
+  const social={vk:tagValue(t,['contact:vk','vk']),telegram:tagValue(t,['contact:telegram','telegram']),max:tagValue(t,['contact:max','max']),instagram:tagValue(t,['contact:instagram','instagram'])};
   const lat=el.lat??el.center?.lat,lon=el.lon??el.center?.lon;
   const osmType=el.type==='node'?'node':el.type;
   return {id:'osm-'+osmType+'-'+el.id,name,category:tagValue(t,['shop','amenity','office','craft','tourism','leisure','healthcare'])||'Компания',address,website:siteUrl(website),phone,email,social,lat,lon,osmUrl:'https://www.openstreetmap.org/'+osmType+'/'+el.id,source:'OpenStreetMap',status:'Новый',note:'',addedAt:new Date().toISOString()};
@@ -55,6 +55,16 @@ async function search(){
   }catch(e){setStatus(e.message||'Ошибка поиска.');}
   finally{$('searchBtn').disabled=false;$('searchBtn').innerHTML='<span>⌕</span> Найти компании'}
 }
+function profileUrl(value,platform){
+ if(!value)return '';
+ const raw=value.trim();
+ if(raw.startsWith('http://')||raw.startsWith('https://'))return raw;
+ const handle=raw.replace(/^@/,'').replace(/^\\//,'');
+ if(platform==='telegram')return 'https://t.me/'+handle;
+ if(platform==='vk')return 'https://vk.com/'+handle;
+ if(platform==='max')return 'https://max.ru/'+handle;
+ return '';
+}
 function messageFor(lead){
  return 'Здравствуйте! Нашёл вашу компанию «'+lead.name+'» и хотел предложить идею по привлечению новых клиентов.\n\nЯ занимаюсь созданием современных лендингов для бизнеса. Такой сайт помогает показать услуги, цены, преимущества и получать обращения из рекламы и поиска.\n\nЕсли вам актуально, могу бесплатно предложить пару идей, как можно улучшить онлайн-презентацию вашей компании. Интересно обсудить?';
 }
@@ -63,7 +73,8 @@ function card(lead){
  const phone=lead.phone?'<a href="tel:'+esc(lead.phone)+'">'+esc(lead.phone)+'</a>':'';
  const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
  const links=[site,phone,email].filter(Boolean).join(' · ');
- return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions"><button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
+ const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
+ return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<a class="mini-btn" href="https://max.ru/" target="_blank" rel="noopener">MAX ↗</a><button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
 }
 function renderResults(){
  const term=$('filterInput').value.toLowerCase(),wf=$('websiteFilter').value;
