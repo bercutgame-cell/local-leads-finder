@@ -101,7 +101,8 @@ export default {
       const city = String(input.city || "").trim().slice(0, 80);
       const category = String(input.category || "all").trim();
       if (city.length < 2) return json({ error: "Укажи город." }, 400, origin);
-      const customTerm = String(input.subcategory || "").trim().slice(0, 80);\n      const terms = customTerm ? [customTerm, ...(TERMS[category] || TERMS.all)] : (TERMS[category] || TERMS.all);
+      const customTerm = String(input.subcategory || "").trim().slice(0, 80);
+      const terms = customTerm ? [customTerm, ...(TERMS[category] || TERMS.all)] : (TERMS[category] || TERMS.all);
       const cityResponse = await vk("database.getCities", {
         q: city, country_id: CITY_COUNTRY_ID, count: 10
       }, env.VK_ACCESS_TOKEN);
