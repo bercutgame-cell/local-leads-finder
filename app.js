@@ -40,7 +40,7 @@ function extract(el){
   const social={vk:tagValue(t,['contact:vk','vk']),telegram:tagValue(t,['contact:telegram','telegram']),max:tagValue(t,['contact:max','max']),instagram:tagValue(t,['contact:instagram','instagram'])};
   const lat=el.lat??el.center?.lat,lon=el.lon??el.center?.lon;
   const osmType=el.type==='node'?'node':el.type;
-  return {id:'osm-'+osmType+'-'+el.id,name,category:tagValue(t,['shop','amenity','office','craft','tourism','leisure','healthcare'])||'Компания',address,website:siteUrl(website),phone,email,social,lat,lon,osmUrl:'https://www.openstreetmap.org/'+osmType+'/'+el.id,source:'OpenStreetMap',status:'Новый',note:'',addedAt:new Date().toISOString()};
+  return {id:'osm-'+osmType+'-'+el.id,name,categoryKey:$('category').value,category:tagValue(t,['shop','amenity','office','craft','tourism','leisure','healthcare'])||'Компания',address,website:siteUrl(website),phone,email,social,lat,lon,osmUrl:'https://www.openstreetmap.org/'+osmType+'/'+el.id,source:'OpenStreetMap',status:'Новый',note:'',addedAt:new Date().toISOString()};
 }
 async function requestOverpass(query){
   const errors=[];
