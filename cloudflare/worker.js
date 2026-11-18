@@ -60,14 +60,15 @@ function normalizeGroup(group, cityTitle, category) {
   const screen = group.screen_name || ("club" + group.id);
   const url = "https://vk.com/" + screen;
   const city = group.city && group.city.title ? group.city.title : cityTitle;
+  const contact = Array.isArray(group.contacts) ? group.contacts.find(item => item && (item.phone || item.email)) : null;
   return {
     id: "vk-" + group.id,
     name: group.name || "Сообщество ВКонтакте",
     category: category + " · сообщество VK",
     address: city + " · точный адрес не подтверждён",
     website: group.site && /^https?:\/\//i.test(group.site) ? group.site : "",
-    phone: "",
-    email: "",
+    phone: contact && contact.phone ? String(contact.phone) : "",
+    email: contact && contact.email ? String(contact.email) : "",
     social: { vk: url },
     lat: null,
     lon: null,
@@ -126,7 +127,7 @@ export default {
       if (detailed.length) {
         const detailsResponse = await vk("groups.getById", {
           group_ids: detailed.map(group => group.id).join(","),
-          fields: "city,description,members_count,activity,verified,site"
+          fields: "city,description,members_count,activity,verified,site,contacts"
         }, env.VK_ACCESS_TOKEN);
         if (Array.isArray(detailsResponse)) detailed = detailsResponse;
         else if (detailsResponse && Array.isArray(detailsResponse.groups)) detailed = detailsResponse.groups;
