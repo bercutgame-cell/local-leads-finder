@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <title>LeadScout — поиск клиентов</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">L</div><div><b>LeadScout</b><small>Поиск потенциальных клиентов</small></div></div>
+    <div class="top-actions"><span class="source-pill">OpenStreetMap · Open data</span><button id="exportBtn" class="button secondary">Экспорт CSV</button></div>
+  </header>
+  <main class="layout">
+    <section class="hero">
+      <div><p class="eyebrow">ЛИДОГЕНЕРАЦИЯ ДЛЯ ВЕБ-СТУДИИ</p><h1>Находи компании,<br><em>которым нужен сайт</em></h1><p class="hero-copy">Ищи бизнесы по городу и нише, проверяй наличие сайта, сохраняй контакты и готовь персональные предложения.</p></div>
+      <div class="hero-stat"><strong id="savedCount">0</strong><span>лидов в базе</span></div>
+    </section>
+    <section class="search-panel panel">
+      <div class="section-heading"><div><span class="step">01</span><h2>Параметры поиска</h2></div><span class="muted">Данные из открытых картографических источников</span></div>
+      <form id="searchForm" class="search-grid">
+        <label class="field city-field"><span>Город или населённый пункт</span><input id="city" required value="Липецк" placeholder="Например, Липецк"></label>
+        <label class="field"><span>Категория бизнеса</span><select id="category">
+          <option value="beauty">Салоны красоты и барбершопы</option><option value="food">Кафе, рестораны и пекарни</option><option value="auto">Автосервисы и автомойки</option><option value="health">Медицина и стоматология</option><option value="construction">Строительство и ремонт</option><option value="fitness">Фитнес и спорт</option><option value="education">Обучение и детские центры</option><option value="lodging">Отели и гостевые дома</option><option value="professional">Услуги и специалисты</option><option value="retail">Магазины</option><option value="all">Все организации</option>
+        </select></label>
+        <label class="field"><span>Радиус поиска</span><select id="radius"><option value="3000">3 км</option><option value="5000" selected>5 км</option><option value="10000">10 км</option><option value="20000">20 км</option></select></label>
+        <button id="searchBtn" class="button primary" type="submit"><span>⌕</span> Найти компании</button>
+      </form>
+      <div id="searchStatus" class="status-line" role="status">Укажи город и категорию, чтобы начать поиск.</div>
+      <p class="fine-print">Поиск использует OpenStreetMap / Overpass API. Полнота карточек зависит от того, какие сведения внесли пользователи карт. Не все компании присутствуют в базе.</p>
+    </section>
+    <section class="results-section">
+      <div class="section-heading results-heading"><div><span class="step">02</span><h2>Найденные компании</h2></div><div class="result-tools"><input id="filterInput" class="filter-input" placeholder="Фильтр по названию или адресу"><select id="websiteFilter" class="small-select"><option value="all">Все по сайтам</option><option value="missing">Без указанного сайта</option><option value="has">Сайт указан</option></select></div></div>
+      <div class="summary-row"><span id="resultCount">Пока нет результатов</span><span id="missingCount" class="opportunity">— потенциальных возможностей</span></div>
+      <div id="results" class="results-grid"><div class="empty-state"><div class="empty-icon">⌕</div><h3>Здесь появятся компании</h3><p>Запусти поиск. Мы соберём публичные сведения и отметим карточки без указанного сайта.</p></div></div>
+    </section>
+    <section class="saved-section panel">
+      <div class="section-heading"><div><span class="step">03</span><h2>Моя база лидов</h2></div><span class="muted">Сохраняется в этом браузере</span></div>
+      <div id="savedLeads" class="saved-list"><p class="muted">Пока ничего не сохранено.</p></div>
+    </section>
+    <footer><span>LeadScout · MVP 0.1</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
+  </main>
+  <div id="toast" class="toast" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
