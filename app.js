@@ -66,7 +66,7 @@ async function requestOverpass(query){
 }
 let progressTimer=null, searchStartedAt=0, progressValue=0;
 function showProgress(value,stage,detail=''){
-  progressValue=Math.max(progressValue,Math.min(96,value));
+  progressValue=Math.max(progressValue,Math.min(100,value));
   const wrap=$('searchProgress'),bar=$('progressBar'),pct=$('progressPercent');
   wrap.hidden=false;bar.style.width=progressValue+'%';pct.textContent=Math.round(progressValue)+'%';
   $('progressStage').textContent=stage;
