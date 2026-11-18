@@ -250,9 +250,10 @@ function syncSiteFieldsToHTML(){
 }
 function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:sessionStorage.getItem('leadscout_publish_password')||''};}
 function savePublishSettings(){
- const url=$('publishWorkerUrl').value.trim().replace(/\\/+$/,'');
+ let url=$('publishWorkerUrl').value.trim();
+ while(url.endsWith('/'))url=url.slice(0,-1);
  const password=$('publishPassword').value;
- if(url&&!/^https:\\/\\//i.test(url)){toast('Адрес Worker должен начинаться с https://');return}
+ if(url&&!url.startsWith('https://')){toast('Адрес Worker должен начинаться с https://');return}
  if(url)localStorage.setItem('leadscout_publish_url',url);else localStorage.removeItem('leadscout_publish_url');
  if(password)sessionStorage.setItem('leadscout_publish_password',password);else sessionStorage.removeItem('leadscout_publish_password');
  $('publishPassword').value='';
@@ -267,7 +268,7 @@ async function publishSite(){
  const btn=$('sitePublish');btn.disabled=true;btn.textContent='Публикуем…';
  $('publishResult').textContent='Отправляем сайт на защищённый сервер публикации…';
  try{
-  const response=await fetch(cfg.url.replace(/\\/+$/,'')+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:lead.name,html})});
+  const response=await fetch(cfg.url+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:lead.name,html})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok)throw new Error(data.error||('Ошибка публикации HTTP '+response.status));
   const saved=state.saved.find(x=>x.id===id);if(saved){saved.siteDraft={...(saved.siteDraft||{}),publishedUrl:data.url,publishedAt:new Date().toISOString(),publishedPath:data.path};persist();}
@@ -321,7 +322,9 @@ $('siteClose').addEventListener('click',closeSiteEditor);
 ['siteName','siteTitle','sitePhone','siteEmail','siteAddress','siteDescription','siteServices','siteButton'].forEach(id=>$(id).addEventListener('input',syncSiteFieldsToHTML));
 $('siteHTML').addEventListener('input',()=>{if($('siteHTML').value!==$('siteHTML').dataset.generatedHTML)$('siteNotice').textContent='В HTML внесены ручные изменения. Они сохранятся отдельно от шаблона.';});
 $('siteSave').addEventListener('click',saveSiteDraft);
-$('siteDownload').addEventListener('click',downloadSiteDraft);\n$('sitePublish').addEventListener('click',publishSite);\n$('savePublishSettings').addEventListener('click',savePublishSettings);
+$('siteDownload').addEventListener('click',downloadSiteDraft);
+$('sitePublish').addEventListener('click',publishSite);
+$('savePublishSettings').addEventListener('click',savePublishSettings);
 $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
