@@ -266,7 +266,7 @@ async function collectVkCommunities(){
  setStatus('Ищем публичные сообщества ВКонтакте по городу '+city+'…');
  try{
   const url=endpoint.endsWith('/search')?endpoint:endpoint+'/search';
-  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city,category,subcategory:$('subcategory').selectedOptions[0]?.textContent||'',categoryLabel:categoryNames[category]||category})});
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city,category,subcategory:$('subcategory').value!==''?($('subcategory').selectedOptions[0]?.textContent||''):'',categoryLabel:categoryNames[category]||category})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||('Ошибка сборщика: HTTP '+response.status));
   if(!data.ok)throw new Error(data.message||data.error||'Сборщик не вернул результат');
