@@ -45,12 +45,17 @@
       <div class="section-heading"><div><span class="step">03</span><h2>Моя база лидов</h2></div><span class="muted">Сохраняется в этом браузере</span></div>
       <div id="savedLeads" class="saved-list"><p class="muted">Пока ничего не сохранено.</p></div>
     </section>
-    <footer><span>LeadScout · MVP 0.2</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
+    <footer><span>LeadScout · MVP 0.4</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
   </main>
   <div id="siteEditor" class="modal-backdrop" hidden>
   <section class="site-editor panel" role="dialog" aria-modal="true" aria-labelledby="siteEditorTitle">
     <div class="section-heading"><div><span class="step">04</span><h2 id="siteEditorTitle">Сайт для компании</h2></div><button id="siteClose" class="mini-btn" type="button">Закрыть ✕</button></div>
     <input id="siteLeadId" type="hidden"><p id="siteNotice" class="muted"></p>
+    <div class="template-upload">
+      <label class="field"><span>Мой HTML-шаблон сайта</span><input id="templateUpload" type="file" accept=".html,.htm,text/html"></label>
+      <p id="templateInfo" class="muted">Шаблон не загружен. Выбери свой HTML-файл.</p>
+      <p class="fine-print">В HTML используй переменные: <code>{{company_name}}</code>, <code>{{title}}</code>, <code>{{phone}}</code>, <code>{{email}}</code>, <code>{{address}}</code>, <code>{{website}}</code>, <code>{{description}}</code>, <code>{{button_text}}</code>, <code>{{services_text}}</code>, <code>{{services_html}}</code>.</p>
+    </div>
     <div class="editor-grid">
       <label class="field"><span>Название сайта / бренда</span><input id="siteName" placeholder="Например, Студия красоты"></label>
       <label class="field"><span>Заголовок первого экрана</span><input id="siteTitle" placeholder="Красота и забота о вас"></label>
@@ -62,10 +67,10 @@
       <label class="field full"><span>Текст кнопки</span><input id="siteButton" placeholder="Оставить заявку"></label>
     </div>
     <p class="fine-print">Данные сохраняются отдельно для каждой компании в локальной базе этого браузера. Можно скачать HTML-черновик сайта и передать его клиенту или доработать перед публикацией.</p>
-    <div class="editor-actions"><button id="siteSave" class="button secondary" type="button">Сохранить данные</button><button id="siteDownload" class="button primary" type="button">Скачать сайт HTML</button></div>
+    <div class="editor-actions"><button id="siteSave" class="button secondary" type="button">Сохранить данные</button><button id="siteDownload" class="button primary" type="button">Скачать сайт из шаблона</button></div>
   </section>
 </div>
 <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="app.js?v=0.3"></script>
+  <script src="app.js?v=0.4"></script>
 </body>
 </html>
