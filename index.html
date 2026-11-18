@@ -51,11 +51,7 @@
   <section class="site-editor panel" role="dialog" aria-modal="true" aria-labelledby="siteEditorTitle">
     <div class="section-heading"><div><span class="step">04</span><h2 id="siteEditorTitle">Сайт для компании</h2></div><button id="siteClose" class="mini-btn" type="button">Закрыть ✕</button></div>
     <input id="siteLeadId" type="hidden"><p id="siteNotice" class="muted"></p>
-    <div class="template-upload">
-      <label class="field"><span>Мой HTML-шаблон сайта</span><input id="templateUpload" type="file" accept=".html,.htm,text/html"></label>
-      <p id="templateInfo" class="muted">Шаблон не загружен. Выбери свой HTML-файл.</p>
-      <p class="fine-print">В HTML используй переменные: <code>{{company_name}}</code>, <code>{{title}}</code>, <code>{{phone}}</code>, <code>{{email}}</code>, <code>{{address}}</code>, <code>{{website}}</code>, <code>{{description}}</code>, <code>{{button_text}}</code>, <code>{{services_text}}</code>, <code>{{services_html}}</code>.</p>
-    </div>
+    <div class="template-upload"><p id="editorTemplateInfo" class="muted">Шаблон можно загрузить во вкладке «Шаблоны и сайты».</p></div>
     <div class="editor-grid">
       <label class="field"><span>Название сайта / бренда</span><input id="siteName" placeholder="Например, Студия красоты"></label>
       <label class="field"><span>Заголовок первого экрана</span><input id="siteTitle" placeholder="Красота и забота о вас"></label>
