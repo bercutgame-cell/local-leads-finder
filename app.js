@@ -1,5 +1,7 @@
 const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
 const API_OVERPASS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.nchc.org.tw/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
   "https://overpass-api.de/api/interpreter"
@@ -40,24 +42,23 @@ function extract(el){
 }
 async function requestOverpass(query){
   const errors=[];
-  for(let i=0;i<API_OVERPASS.length;i++){
-    const endpoint=API_OVERPASS[i];
-    setStatus('Запрос к картографическому серверу '+(i+1)+' из '+API_OVERPASS.length+'…');
-    showProgress(36+i*4,'Получаем список компаний','Сервер '+(i+1)+' из '+API_OVERPASS.length+' · максимум 16 секунд на попытку');
+  const attempts=API_OVERPASS.map(async(endpoint)=>{
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),16000);
+    const timeout=setTimeout(()=>controller.abort(),22000);
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query}),signal:controller.signal});
       if(!response.ok)throw new Error('HTTP '+response.status);
       const data=await response.json();
-      if(!data||!Array.isArray(data.elements))throw new Error('Сервер вернул ответ без списка объектов');
+      if(!data||!Array.isArray(data.elements))throw new Error('Некорректный ответ');
       return data;
     }catch(error){
-      const reason=error.name==='AbortError'?'превышено время ожидания':error.message||'ошибка сети или CORS';
+      const reason=error.name==='AbortError'?'тайм-аут 22 сек.':error.message||'сетевая ошибка / CORS';
       errors.push(new URL(endpoint).host+': '+reason);
+      throw error;
     }finally{clearTimeout(timeout);}
-  }
-  throw new Error('Не удалось получить данные с картографических серверов. '+errors.join(' · '));
+  });
+  try{return await Promise.any(attempts);}
+  catch{throw new Error('Все картографические источники недоступны. '+errors.join(' · '));}
 }
 let progressTimer=null, searchStartedAt=0, progressValue=0;
 function showProgress(value,stage,detail=''){
@@ -183,8 +184,16 @@ function setTemplate(html,name){
 }
 function renderTemplateInfo(){
  const name=localStorage.getItem('leadscout_html_template_name')||'';
- $('templateInfo').textContent=getTemplate()?'Загружен шаблон: '+name:'Шаблон не загружен. Выбери свой HTML-файл.';
+ const message=getTemplate()?'Загружен шаблон: '+name:'Шаблон не загружен. Выбери свой HTML-файл.';
+ if($('templateInfo'))$('templateInfo').textContent=message;
+ if($('editorTemplateInfo'))$('editorTemplateInfo').textContent=message;
 }
+function showWorkspace(id){
+ document.querySelectorAll('.workspace-view').forEach(v=>{const active=v.id===id;v.hidden=!active;v.classList.toggle('active',active)});
+ document.querySelectorAll('.workspace-tab').forEach(v=>v.classList.toggle('active',v.dataset.view===id));
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.workspace-tab').forEach(v=>v.addEventListener('click',()=>showWorkspace(v.dataset.view)));
 function buildCustomizedHTML(lead){
  const template=getTemplate();if(!template)throw new Error('Сначала загрузи свой HTML-шаблон.');
  const d=lead.siteDraft||{};
@@ -227,3 +236,4 @@ $('sitePreview').addEventListener('click',previewSiteDraft);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name);toast('HTML-шаблон загружен')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
 renderTemplateInfo();
 renderSaved();
+showWorkspace('searchView');
