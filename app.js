@@ -175,12 +175,31 @@ function saveSiteDraft(){
   lead.siteDraft={siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim()};
   persist();renderResults();renderSaved();toast('Данные сайта сохранены отдельно для этой компании');
 }
+function getTemplate(){try{return localStorage.getItem('leadscout_html_template')||''}catch{return ''}}
+function setTemplate(html,name){
+ try{localStorage.setItem('leadscout_html_template',html);localStorage.setItem('leadscout_html_template_name',name||'custom-template.html')}
+ catch(e){throw new Error('HTML-шаблон не помещается в хранилище браузера. Уменьши размер файла.')}
+ renderTemplateInfo();
+}
+function renderTemplateInfo(){
+ const name=localStorage.getItem('leadscout_html_template_name')||'';
+ $('templateInfo').textContent=getTemplate()?'Загружен шаблон: '+name:'Шаблон не загружен. Выбери свой HTML-файл.';
+}
+function buildCustomizedHTML(lead){
+ const template=getTemplate();if(!template)throw new Error('Сначала загрузи свой HTML-шаблон.');
+ const d=lead.siteDraft||{};
+ const services=String(d.services||'').split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+ const values={company_name:d.siteName||lead.name,title:d.title||lead.name,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
+ return template.replace(/\\{\\{([a-z_]+)\\}\\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
+}
 function downloadSiteDraft(){
-  saveSiteDraft();
-  const id=$('siteLeadId').value,lead=state.saved.find(x=>x.id===id);if(!lead?.siteDraft)return;
-  const d=lead.siteDraft,lines=d.services.split(/\r?\n/).filter(Boolean);
-  const html='<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(d.siteTitle||d.siteName)+'</title><style>body{margin:0;font:16px Arial,sans-serif;color:#182333;background:#f4f7f8}main{max-width:850px;margin:8vh auto;padding:36px;background:white;border-radius:20px}h1{font-size:38px}p,li{line-height:1.65}.btn{display:inline-block;background:#176b50;color:white;padding:14px 20px;border-radius:9px;text-decoration:none;margin-top:15px}.muted{color:#64748b}</style><main><p class="muted">'+esc(d.siteName)+'</p><h1>'+esc(d.title)+'</h1><p>'+esc(d.description)+'</p><h2>Услуги и цены</h2><ul>'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><h2>Контакты</h2><p>'+esc(d.address)+'</p>'+(d.phone?'<p><a href="tel:'+esc(d.phone)+'">'+esc(d.phone)+'</a></p>':'')+(d.email?'<p><a href="mailto:'+esc(d.email)+'">'+esc(d.email)+'</a></p>':'')+(d.phone?'<a class="btn" href="tel:'+esc(d.phone)+'">'+esc(d.button||'Связаться')+'</a>':'')+'</main></html>';
-  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='site-'+id+'.html';a.click();URL.revokeObjectURL(url);
+ saveSiteDraft();
+ const id=$('siteLeadId').value,lead=state.saved.find(x=>x.id===id);if(!lead)return;
+ try{
+  const html=buildCustomizedHTML(lead),url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');
+  a.href=url;a.download='index-'+id+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast('Готовый HTML из твоего шаблона скачан');
+ }catch(e){toast(e.message)}
 }
 
 document.addEventListener('click',async e=>{
@@ -198,4 +217,6 @@ $('exportBtn').addEventListener('click',exportCSV);
 $('siteClose').addEventListener('click',closeSiteEditor);
 $('siteSave').addEventListener('click',saveSiteDraft);
 $('siteDownload').addEventListener('click',downloadSiteDraft);
+$('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name);toast('HTML-шаблон загружен')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
+renderTemplateInfo();
 renderSaved();
