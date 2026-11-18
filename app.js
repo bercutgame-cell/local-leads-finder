@@ -22,6 +22,8 @@ const categories = {
   all: ['amenity','shop','office','craft','tourism','leisure','healthcare']
 };
 const categoryNames = Object.fromEntries([...$('category').options].map(o=>[o.value,o.textContent]));
+const subcategories = {"beauty":[["Парикмахерские","shop=\"hairdresser\""],["Барбершопы","amenity=\"barber\""],["Салоны красоты","shop=\"beauty\""],["Массаж","shop=\"massage\""],["Тату и пирсинг","shop=\"tattoo\""],["Косметика","shop=\"cosmetics\""]],"food":[["Рестораны","amenity=\"restaurant\""],["Кафе и кофейни","amenity=\"cafe\""],["Фастфуд","amenity=\"fast_food\""],["Пекарни","shop=\"bakery\""],["Кондитерские","shop=\"confectionery\""],["Бары","amenity=\"bar\""]],"auto":[["Автосервисы","shop=\"car_repair\""],["Автомойки","amenity=\"car_wash\""],["Шиномонтаж","shop=\"tyres\""],["Автодилеры","shop=\"car\""],["АЗС","amenity=\"fuel\""]],"health":[["Стоматологии","amenity=\"dentist\""],["Клиники","amenity=\"clinic\""],["Врачи","amenity=\"doctors\""],["Больницы","amenity=\"hospital\""],["Аптеки","amenity=\"pharmacy\""],["Ветеринарные клиники","amenity=\"veterinary\""]],"construction":[["Сантехники","craft=\"plumber\""],["Электрики","craft=\"electrician\""],["Строители","craft=\"builder\""],["Маляры","craft=\"painter\""],["Кровельщики","craft=\"roofer\""],["Архитекторы","office=\"architect\""]],"fitness":[["Фитнес-клубы","leisure=\"fitness_centre\""],["Спортивные центры","leisure=\"sports_centre\""],["Спортзалы","leisure=\"sports_hall\""],["Спортивные площадки","leisure=\"pitch\""]],"education":[["Детские сады","amenity=\"kindergarten\""],["Школы","amenity=\"school\""],["Языковые школы","amenity=\"language_school\""],["Музыкальные школы","amenity=\"music_school\""],["Колледжи","amenity=\"college\""]],"lodging":[["Отели","tourism=\"hotel\""],["Гостевые дома","tourism=\"guest_house\""],["Хостелы","tourism=\"hostel\""],["Мотели","tourism=\"motel\""],["Апартаменты","tourism=\"apartment\""]],"professional":[["Юристы","office=\"lawyer\""],["Бухгалтеры","office=\"accountant\""],["Недвижимость","office=\"estate_agent\""],["Страхование","office=\"insurance\""],["Консалтинг","office=\"consulting\""],["Рекрутинг","office=\"employment_agency\""]],"retail":[["Продуктовые магазины","shop=\"supermarket\""],["Одежда","shop=\"clothes\""],["Обувь","shop=\"shoes\""],["Электроника","shop=\"electronics\""],["Цветочные магазины","shop=\"florist\""],["Мебель","shop=\"furniture\""],["Зоомагазины","shop=\"pet\""]]};
+function updateSubcategories(){const key=$('category').value,select=$('subcategory'),items=subcategories[key]||[];select.innerHTML='<option value="">Все подкатегории</option>'+items.map((x,i)=>'<option value="'+i+'">'+esc(x[0])+'</option>').join('');select.disabled=!items.length;}
 function loadSaved(){try{return JSON.parse(localStorage.getItem('leadscout_saved')||'[]')}catch{return []}}
 function persist(){localStorage.setItem('leadscout_saved',JSON.stringify(state.saved));renderSaved();$('savedCount').textContent=state.saved.length}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -97,7 +99,7 @@ async function search(){
     const {lat,lon,display_name}=places[0];
     showProgress(27,'Формируем запрос','Радиус '+(radius/1000)+' км · '+display_name);
     setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
-    const filters=categories[category]||categories.all;
+    const chosen=$('subcategory').value;const filters=(chosen!==''&&subcategories[category]?.[Number(chosen)])?[subcategories[category][Number(chosen)][1]]:(categories[category]||categories.all);
     const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
     const query='[out:json][timeout:25];(\n'+clauses+'\n);out center tags;';
     showProgress(35,'Запрос отправлен','Ожидаем ответ картографического сервера. Процент — ориентировочная индикация, не точный таймер');
@@ -143,6 +145,22 @@ function renderSaved(){
  $('savedCount').textContent=state.saved.length;
  $('savedLeads').innerHTML=state.saved.length?state.saved.map(x=>'<div class="saved-row"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.address)+' · '+(x.website?'Сайт указан':'Сайт не указан')+' · '+esc(x.status||'Новый')+'</small></div><div><button class="mini-btn" data-site="'+esc(x.id)+'">Сайт / изменить</button> <button class="mini-btn" data-outreach="'+esc(x.id)+'">Связаться</button> <button class="mini-btn" data-remove="'+esc(x.id)+'">Удалить</button></div></div>').join(''):'<p class="muted">Пока ничего не сохранено.</p>';
 }
+function openOutreach(id){
+ const lead=state.saved.find(x=>x.id===id);if(!lead)return;
+ $('outreachWorkspace').hidden=false;
+ $('outreachCompany').innerHTML='<strong>'+esc(lead.name)+'</strong><p>'+esc(lead.address)+'</p><div class="contact-lines">'+(lead.phone?'<a href="tel:'+esc(lead.phone)+'">Телефон: '+esc(lead.phone)+'</a>':'')+(lead.email?' <a href="mailto:'+esc(lead.email)+'">Email: '+esc(lead.email)+'</a>':'')+(lead.website?' <a href="'+esc(lead.website)+'" target="_blank" rel="noopener">Сайт ↗</a>':'')+'</div>';
+ $('outreachMessage').value=lead.outreachMessage||messageFor(lead);
+ $('outreachWorkspace').dataset.leadId=id;
+ const links=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']];
+ const channels=[];
+ if(lead.phone)channels.push('<a class="mini-btn" href="tel:'+esc(lead.phone)+'">Позвонить</a>');
+ if(lead.email)channels.push('<a class="mini-btn" href="mailto:'+esc(lead.email)+'?subject='+encodeURIComponent('Предложение по сайту для '+lead.name)+'">Написать на email</a>');
+ links.forEach(([label,value,kind])=>{const url=profileUrl(value,kind);if(url)channels.push('<a class="mini-btn" href="'+esc(url)+'" target="_blank" rel="noopener">Открыть '+label+'</a>')});
+ $('outreachChannels').innerHTML=channels.length?channels.join(''):'<p class="muted">В карточке нет телефона, email или публичных социальных ссылок. Можно скопировать текст и найти официальный канал компании.</p>';
+ $('outreachStatus').textContent=lead.status==='Написал'?'✓ Уже отмечено: написал':'Отметить: написал';
+}
+function closeOutreach(){$('outreachWorkspace').hidden=true;}
+
 function exportCSV(){
  if(!state.saved.length){toast('Сначала сохрани компании');return}
  const cols=['Название','Категория','Адрес','Телефон','Email','Сайт','VK','Telegram','Источник','Ссылка на карту','Статус'];
@@ -224,9 +242,15 @@ document.addEventListener('click',async e=>{
  if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
- if(b.dataset.outreach){const l=state.saved.find(x=>x.id===b.dataset.outreach);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован. Выбери удобный канал связи в карточке компании или найди её профиль вручную.')}}
+ if(b.dataset.outreach){showWorkspace('clientsView');openOutreach(b.dataset.outreach);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}
 });
 $('searchForm').addEventListener('submit',e=>{e.preventDefault();search()});
+$('category').addEventListener('change',updateSubcategories);
+updateSubcategories();
+$('outreachClose').addEventListener('click',closeOutreach);
+$('outreachCopy').addEventListener('click',async()=>{const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(!lead)return;lead.outreachMessage=$('outreachMessage').value;persist();try{await navigator.clipboard.writeText(lead.outreachMessage);toast('Текст предложения скопирован')}catch{toast('Не удалось скопировать автоматически. Выдели текст вручную.')}});
+$('outreachStatus').addEventListener('click',()=>{const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(!lead)return;lead.status='Написал';lead.lastContactAt=new Date().toISOString();lead.outreachMessage=$('outreachMessage').value;persist();openOutreach(id);toast('Статус клиента обновлён')});
+$('outreachMessage').addEventListener('input',()=>{const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(lead)lead.outreachMessage=$('outreachMessage').value;});
 $('filterInput').addEventListener('input',renderResults);
 $('websiteFilter').addEventListener('change',renderResults);
 $('exportBtn').addEventListener('click',exportCSV);
