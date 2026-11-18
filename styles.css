@@ -158,3 +158,11 @@ nav.workspace-nav{
 .social-entry{display:grid;gap:10px}
 .social-entry .field{margin:0}
 .quick-social{margin-top:16px}
+
+
+/* LeadScout VK Collector */
+.vk-collector{margin:14px 0;padding:16px;border:1px solid var(--line,#dfe4ea);border-radius:14px;background:var(--panel,#fff)}
+.vk-collector .field{margin:10px 0}
+.vk-collector .lead-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vk-collector h3{margin:0;font-size:1rem}
+.vk-collector .button:disabled{opacity:.6;cursor:wait}
