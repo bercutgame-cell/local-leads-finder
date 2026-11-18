@@ -134,6 +134,8 @@ function profileUrl(value,platform){
  if(platform==='max')return 'https://max.ru/'+handle;
  return '';
 }
+function socialSearchUrl(platform,query){const domains={vk:'vk.com',telegram:'t.me',instagram:'instagram.com'};const domain=domains[platform];if(!domain)return '';return 'https://yandex.ru/search/?text='+encodeURIComponent('site:'+domain+' '+query)}
+function openSocialSearch(platform,query){const url=socialSearchUrl(platform,query);if(url)window.open(url,'_blank','noopener,noreferrer')}
 function messageFor(lead){
  return 'Здравствуйте! Нашёл вашу компанию «'+lead.name+'» и хотел предложить идею по привлечению новых клиентов.\n\nЯ занимаюсь созданием современных лендингов для бизнеса. Такой сайт помогает показать услуги, цены, преимущества и получать обращения из рекламы и поиска.\n\nЕсли вам актуально, могу бесплатно предложить пару идей, как можно улучшить онлайн-презентацию вашей компании. Интересно обсудить?';
 }
@@ -143,7 +145,7 @@ function card(lead){
  const email=lead.email?'<a href="mailto:'+esc(lead.email)+'">'+esc(lead.email)+'</a>':'';
  const links=[site,phone,email].filter(Boolean).join(' · ');
  const socialLinks=[['VK',lead.social?.vk,'vk'],['Telegram',lead.social?.telegram,'telegram'],['MAX',lead.social?.max,'max']].filter(x=>x[1]).map(x=>{const u=profileUrl(x[1],x[2]);return u?'<a class="mini-btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+x[0]+' ↗</a>':''}).join('');
- return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-contact="'+esc(lead.id)+'">Контакты</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
+ return '<article class="lead-card"><div class="lead-top"><div><h3>'+esc(lead.name)+'</h3><div class="category-label">'+esc(lead.category)+'</div></div><span class="badge '+(lead.website?'has':'missing')+'">'+(lead.website?'Сайт указан':'Нет сайта в данных')+'</span></div><p class="lead-address">'+esc(lead.address)+'</p><div class="contact-lines">'+(links||'Публичные контакты не указаны')+'</div><div class="lead-actions">'+socialLinks+'<button class="mini-btn save" data-save="'+esc(lead.id)+'">'+(saved?'✓ В базе':'＋ Сохранить')+'</button><button class="mini-btn" data-contact="'+esc(lead.id)+'">Контакты</button><button class="mini-btn" data-social-search="'+esc(lead.id)+'">Найти соцсети</button><button class="mini-btn" data-site="'+esc(lead.id)+'">Сайт для клиента</button><button class="mini-btn" data-copy="'+esc(lead.id)+'">Текст предложения</button><a class="mini-btn" target="_blank" rel="noopener" href="'+esc(lead.osmUrl)+'">Карта ↗</a></div></article>';
 }
 function renderResults(){
  const term=$('filterInput').value.toLowerCase(),wf=$('websiteFilter').value;
@@ -168,7 +170,9 @@ function openOutreach(id){
  if(lead.phone)channels.push('<a class="mini-btn" href="tel:'+esc(lead.phone)+'">Позвонить</a>');
  if(lead.email)channels.push('<a class="mini-btn" href="mailto:'+esc(lead.email)+'?subject='+encodeURIComponent('Предложение по сайту для '+lead.name)+'">Написать на email</a>');
  links.forEach(([label,value,kind])=>{const url=profileUrl(value,kind);if(url)channels.push('<a class="mini-btn" href="'+esc(url)+'" target="_blank" rel="noopener">Открыть '+label+'</a>')});
- $('outreachChannels').innerHTML=channels.length?channels.join(''):'<p class="muted">В карточке нет телефона, email или публичных социальных ссылок. Можно скопировать текст и найти официальный канал компании.</p>';
+ const city=$('city').value.trim();const searchQuery='"'+lead.name+'" '+city+' '+lead.address;
+ $('outreachChannels').innerHTML=(channels.length?channels.join(''):'<p class="muted">В карточке пока нет подтверждённых контактов.</p>')+'<div class="social-discovery"><strong>Поиск публичных страниц компании</strong><p class="fine-print">Проверь совпадение города и адреса, затем сохрани подтверждённую ссылку ниже.</p>'+[['Искать VK','vk'],['Искать Telegram','telegram'],['Искать Instagram','instagram']].map(([label,kind])=>'<a class="mini-btn" href="'+esc(socialSearchUrl(kind,searchQuery))+'" target="_blank" rel="noopener noreferrer">'+label+' ↗</a>').join('')+'</div>';
+ $('socialVk').value=lead.social?.vk||'';$('socialTelegram').value=lead.social?.telegram||'';$('socialInstagram').value=lead.social?.instagram||'';
  $('outreachStatus').textContent=lead.status==='Написал'?'✓ Уже отмечено: написал':'Отметить: написал';
 }
 function closeOutreach(){$('outreachWorkspace').hidden=true;}
@@ -257,6 +261,9 @@ document.addEventListener('click',async e=>{
   if(!lead){const found=state.results.find(x=>x.id===id);if(found){lead={...found};state.saved.unshift(lead);persist();}}
   if(lead){showWorkspace('clientsView');openOutreach(id);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}
  }
+ if(b.dataset.socialSearch){const lead=state.results.find(x=>x.id===b.dataset.socialSearch)||state.saved.find(x=>x.id===b.dataset.socialSearch);if(lead){let saved=state.saved.find(x=>x.id===lead.id);if(!saved){saved={...lead};state.saved.unshift(saved);persist()}showWorkspace('clientsView');openOutreach(saved.id);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}}
+ if(b.dataset.socialDiscovery){const city=$('city').value.trim();const category=categoryNames[$('category').value]||'компании';const sub=$('subcategory').selectedOptions[0]?.textContent||'';const q=[city,sub&&sub!=='Все подкатегории'?sub:category].filter(Boolean).join(' ');openSocialSearch(b.dataset.socialDiscovery,q);}
+ if(b.id==='saveSocials'){const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(lead){lead.social=lead.social||{};lead.social.vk=$('socialVk').value.trim();lead.social.telegram=$('socialTelegram').value.trim();lead.social.instagram=$('socialInstagram').value.trim();lead.socialSources={updatedAt:new Date().toISOString(),method:'Проверено вручную по публичной странице'};persist();renderResults();openOutreach(id);toast('Социальные ссылки сохранены в карточке');}}
  if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
