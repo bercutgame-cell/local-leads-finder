@@ -42,3 +42,44 @@ body{padding-bottom:105px}
 .workspace-nav{top:auto!important;bottom:max(8px,env(safe-area-inset-bottom));height:60px;min-height:0;max-height:60px;align-items:center;}
 .workspace-tab{height:46px;min-height:0;max-height:46px;align-self:center;}
 @media(max-width:600px){.workspace-nav{top:auto!important;bottom:max(7px,env(safe-area-inset-bottom));height:56px;min-height:0;max-height:56px;}.workspace-tab{height:44px;min-height:0;max-height:44px;}}
+
+
+/* v0.9 — hard reset of navigation geometry (including iOS Safari inset rules) */
+nav.workspace-nav{
+  position:fixed!important;
+  inset: auto auto max(7px, env(safe-area-inset-bottom)) 50%!important;
+  top:unset!important;
+  right:unset!important;
+  left:50%!important;
+  bottom:max(7px, env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:stretch!important;
+  box-sizing:border-box!important;
+  width:min(380px,calc(100vw - 28px))!important;
+  height:56px!important;
+  min-height:56px!important;
+  max-height:56px!important;
+  padding:5px!important;
+  margin:0!important;
+  overflow:hidden!important;
+}
+nav.workspace-nav>.workspace-tab{
+  position:relative!important;
+  display:flex!important;
+  flex:1 1 0!important;
+  width:0!important;
+  min-width:0!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:4px 5px!important;
+  align-self:center!important;
+  box-sizing:border-box!important;
+}
+@media(min-width:601px){
+  nav.workspace-nav{width:min(420px,calc(100vw - 32px))!important;}
+}
