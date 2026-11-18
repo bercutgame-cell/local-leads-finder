@@ -1,5 +1,9 @@
 const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const API_OVERPASS = "https://overpass-api.de/api/interpreter";
+const API_OVERPASS = [
+  "https://overpass.private.coffee/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass-api.de/api/interpreter"
+];
 const $ = (id) => document.getElementById(id);
 const state = { results: [], saved: loadSaved() };
 const categories = {
@@ -34,6 +38,32 @@ function extract(el){
   const osmType=el.type==='node'?'node':el.type;
   return {id:'osm-'+osmType+'-'+el.id,name,category:tagValue(t,['shop','amenity','office','craft','tourism','leisure','healthcare'])||'Компания',address,website:siteUrl(website),phone,email,social,lat,lon,osmUrl:'https://www.openstreetmap.org/'+osmType+'/'+el.id,source:'OpenStreetMap',status:'Новый',note:'',addedAt:new Date().toISOString()};
 }
+async function requestOverpass(query){
+  const errors=[];
+  for(let i=0;i<API_OVERPASS.length;i++){
+    const endpoint=API_OVERPASS[i];
+    setStatus('Подключаемся к картографическому серверу '+(i+1)+' из '+API_OVERPASS.length+'…');
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),35000);
+    try{
+      const response=await fetch(endpoint,{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+        body:'data='+encodeURIComponent(query),
+        signal:controller.signal
+      });
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const data=await response.json();
+      if(!data||!Array.isArray(data.elements))throw new Error('Некорректный ответ сервера');
+      return data;
+    }catch(error){
+      errors.push(endpoint+': '+(error.name==='AbortError'?'тайм-аут':error.message||'ошибка сети'));
+    }finally{
+      clearTimeout(timeout);
+    }
+  }
+  throw new Error('Все серверы OpenStreetMap временно недоступны или перегружены. Подожди 1–2 минуты и повтори поиск.');
+}
 async function search(){
   const city=$('city').value.trim(),category=$('category').value,radius=Number($('radius').value);
   if(!city){setStatus('Укажи город.');return}
@@ -46,9 +76,7 @@ async function search(){
     const filters=categories[category]||categories.all;
     const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
     const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
-    const response=await fetch(API_OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)});
-    if(!response.ok)throw new Error('Картографический сервер временно недоступен ('+response.status+'). Повтори поиск через минуту.');
-    const data=await response.json();
+    const data=await requestOverpass(query);
     const seen=new Set();state.results=data.elements.map(extract).filter(x=>x.name!=='Без названия').filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true}).sort((a,b)=>Number(!a.website)-Number(!b.website));
     renderResults();const missing=state.results.filter(x=>!x.website).length;
     setStatus('Готово: найдено '+state.results.length+' компаний. Без указанного сайта: '+missing+'.');
