@@ -1,9 +1,9 @@
 const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
 const API_OVERPASS = [
-  "https://overpass.kumi.systems/api/interpreter",
-  "https://overpass.nchc.org.tw/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
+  "https://lz4.overpass-api.de/api/interpreter",
+  "https://ovp.dresel.systems/api/interpreter",
   "https://overpass-api.de/api/interpreter"
 ];
 const $ = (id) => document.getElementById(id);
@@ -42,9 +42,12 @@ function extract(el){
 }
 async function requestOverpass(query){
   const errors=[];
-  const attempts=API_OVERPASS.map(async(endpoint)=>{
+  for(let i=0;i<API_OVERPASS.length;i++){
+    const endpoint=API_OVERPASS[i];
+    setStatus('Проверяем картографический источник '+(i+1)+' из '+API_OVERPASS.length+'…');
+    showProgress(38+i*3,'Получаем список компаний','Источник '+(i+1)+' из '+API_OVERPASS.length+' · до 14 секунд');
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),22000);
+    const timeout=setTimeout(()=>controller.abort(),14000);
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query}),signal:controller.signal});
       if(!response.ok)throw new Error('HTTP '+response.status);
@@ -52,13 +55,11 @@ async function requestOverpass(query){
       if(!data||!Array.isArray(data.elements))throw new Error('Некорректный ответ');
       return data;
     }catch(error){
-      const reason=error.name==='AbortError'?'тайм-аут 22 сек.':error.message||'сетевая ошибка / CORS';
+      const reason=error.name==='AbortError'?'тайм-аут 14 сек.':error.message||'сетевая ошибка / CORS';
       errors.push(new URL(endpoint).host+': '+reason);
-      throw error;
     }finally{clearTimeout(timeout);}
-  });
-  try{return await Promise.any(attempts);}
-  catch{throw new Error('Все картографические источники недоступны. '+errors.join(' · '));}
+  }
+  throw new Error('Все картографические источники недоступны. '+errors.join(' · '));
 }
 let progressTimer=null, searchStartedAt=0, progressValue=0;
 function showProgress(value,stage,detail=''){
