@@ -139,3 +139,13 @@ nav.workspace-nav>.workspace-tab{
     max-height:46px!important;
   }
 }
+
+
+/* v1.1 — fully opaque fixed navigation backing */
+nav.workspace-nav{
+  background-color:#08101c!important;
+  background-image:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  opacity:1!important;
+}
