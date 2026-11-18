@@ -167,3 +167,9 @@ nav.workspace-nav{
 #siteHTML:focus{outline:2px solid #65c99b;outline-offset:1px}
 #regenerateSiteHTML{margin-top:8px}
 @media(max-width:600px){#siteHTML{min-height:360px;font-size:11px}}
+
+
+/* LeadScout 2.2 — website publishing */
+.publish-settings{margin-top:20px;padding:16px;border:1px solid #344b65;border-radius:14px;background:#0b1726;display:grid;gap:12px}
+.publish-settings h3{margin:0}.publish-settings .field{margin:0}.publish-result{margin-top:14px;padding:10px 12px;border-radius:10px;background:#102235;color:#dce9f7;overflow-wrap:anywhere}.publish-result a{color:#7ed8b0}
+@media(max-width:600px){.publish-settings{padding:13px}.editor-actions{display:flex;flex-direction:column}.editor-actions button{width:100%}}
