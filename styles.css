@@ -149,3 +149,12 @@ nav.workspace-nav{
   backdrop-filter:none!important;
   opacity:1!important;
 }
+
+
+/* LeadScout 1.6 — social discovery */
+.social-discovery,.social-entry{margin-top:14px;padding:14px;border:1px solid var(--line,#dfe4ea);border-radius:14px;background:var(--panel,#fff)}
+.social-discovery strong,.social-entry>strong{display:block;margin-bottom:8px}
+.social-discovery .lead-actions{display:flex;flex-wrap:wrap;gap:8px}
+.social-entry{display:grid;gap:10px}
+.social-entry .field{margin:0}
+.quick-social{margin-top:16px}
