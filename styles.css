@@ -36,3 +36,9 @@ body{padding-bottom:105px}
 .workspace-tab.active{background:#29483e;border-color:#527765;color:#e0f7e7;}
 .workspace-tab.active svg{color:#baf0ca;}
 @media(max-width:600px){.workspace-nav{width:min(380px,calc(100% - 28px));padding:5px;gap:4px;bottom:max(7px,env(safe-area-inset-bottom));border-radius:14px;}.workspace-tab{min-height:46px;padding:4px 6px;font-size:10px;}.workspace-tab svg{width:18px;height:18px;}}
+
+
+/* v0.8 — prevent fixed navigation from stretching vertically */
+.workspace-nav{top:auto!important;bottom:max(8px,env(safe-area-inset-bottom));height:60px;min-height:0;max-height:60px;align-items:center;}
+.workspace-tab{height:46px;min-height:0;max-height:46px;align-self:center;}
+@media(max-width:600px){.workspace-nav{top:auto!important;bottom:max(7px,env(safe-area-inset-bottom));height:56px;min-height:0;max-height:56px;}.workspace-tab{height:44px;min-height:0;max-height:44px;}}
