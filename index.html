@@ -12,7 +12,7 @@
     <div class="brand"><div class="brand-mark">L</div><div><b>LeadScout</b><small>Поиск потенциальных клиентов</small></div></div>
     <div class="top-actions"><span class="source-pill">OpenStreetMap · Open data</span><button id="exportBtn" class="button secondary">Экспорт CSV</button></div>
   </header>
-  <main class="layout">
+  <main class="layout"><nav class="workspace-nav" aria-label="Разделы приложения"><button class="workspace-tab active" data-view="searchView" type="button">⌕ Поиск компаний</button><button class="workspace-tab" data-view="clientsView" type="button">▤ Клиенты и предложения</button><button class="workspace-tab" data-view="sitesView" type="button">▣ Шаблоны и сайты</button></nav><div id="searchView" class="workspace-view active">
     <section class="hero">
       <div><p class="eyebrow">ЛИДОГЕНЕРАЦИЯ ДЛЯ ВЕБ-СТУДИИ</p><h1>Находи компании,<br><em>которым нужен сайт</em></h1><p class="hero-copy">Ищи бизнесы по городу и нише, проверяй наличие сайта, сохраняй контакты и готовь персональные предложения.</p></div>
       <div class="hero-stat"><strong id="savedCount">0</strong><span>лидов в базе</span></div>
@@ -41,11 +41,11 @@
       <div class="summary-row"><span id="resultCount">Пока нет результатов</span><span id="missingCount" class="opportunity">— потенциальных возможностей</span></div>
       <div id="results" class="results-grid"><div class="empty-state"><div class="empty-icon">⌕</div><h3>Здесь появятся компании</h3><p>Запусти поиск. Мы соберём публичные сведения и отметим карточки без указанного сайта.</p></div></div>
     </section>
-    <section class="saved-section panel">
+    </div><div id="clientsView" class="workspace-view" hidden><section class="saved-section panel">
       <div class="section-heading"><div><span class="step">03</span><h2>Моя база лидов</h2></div><span class="muted">Сохраняется в этом браузере</span></div>
       <div id="savedLeads" class="saved-list"><p class="muted">Пока ничего не сохранено.</p></div>
     </section>
-    <footer><span>LeadScout · MVP 0.4</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
+    </div><div id="sitesView" class="workspace-view" hidden><section class="panel template-workspace"><div class="section-heading"><div><span class="step">01</span><h2>Мой шаблон сайта</h2></div><span class="muted">Один шаблон для персонализации сайтов клиентов</span></div><p class="template-intro">Загрузи собственный HTML-файл. Для каждого сохранённого клиента можно заполнить его данные, подставить их в твой дизайн, посмотреть результат и скачать готовую страницу.</p><label class="field"><span>Выбрать HTML-шаблон (.html)</span><input id="templateUpload" type="file" accept=".html,.htm,text/html"></label><p id="templateInfo" class="muted template-current">Шаблон не загружен. Выбери свой HTML-файл.</p><p class="fine-print">Переменные: <code>{{company_name}}</code>, <code>{{title}}</code>, <code>{{phone}}</code>, <code>{{email}}</code>, <code>{{address}}</code>, <code>{{website}}</code>, <code>{{description}}</code>, <code>{{button_text}}</code>, <code>{{services_text}}</code>, <code>{{services_html}}</code>.</p><div class="template-next"><strong>Дальше</strong><span>Открой вкладку «Клиенты и предложения», сохрани компанию и нажми «Сайт / изменить».</span></div></section></div><footer><span>LeadScout · MVP 0.5</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
   </main>
   <div id="siteEditor" class="modal-backdrop" hidden>
   <section class="site-editor panel" role="dialog" aria-modal="true" aria-labelledby="siteEditorTitle">
@@ -71,6 +71,6 @@
   </section>
 </div>
 <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="app.js?v=0.4"></script>
+  <script src="app.js?v=0.5"></script>
 </body>
 </html>
