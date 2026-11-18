@@ -1,8 +1,7 @@
 const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
 const API_OVERPASS = [
-  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
-  "https://lz4.overpass-api.de/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://ovp.dresel.systems/api/interpreter",
   "https://overpass-api.de/api/interpreter"
 ];
@@ -47,9 +46,9 @@ async function requestOverpass(query){
   for(let i=0;i<API_OVERPASS.length;i++){
     const endpoint=API_OVERPASS[i];
     setStatus('Проверяем картографический источник '+(i+1)+' из '+API_OVERPASS.length+'…');
-    showProgress(38+i*3,'Получаем список компаний','Источник '+(i+1)+' из '+API_OVERPASS.length+' · до 14 секунд');
+    showProgress(38+i*3,'Получаем список компаний','Источник '+(i+1)+' из '+API_OVERPASS.length+' · до 50 секунд');
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),14000);
+    const timeout=setTimeout(()=>controller.abort(),50000);
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query}),signal:controller.signal});
       if(!response.ok)throw new Error('HTTP '+response.status);
@@ -57,7 +56,7 @@ async function requestOverpass(query){
       if(!data||!Array.isArray(data.elements))throw new Error('Некорректный ответ');
       return data;
     }catch(error){
-      const reason=error.name==='AbortError'?'тайм-аут 14 сек.':error.message||'сетевая ошибка / CORS';
+      const reason=error.name==='AbortError'?'тайм-аут 50 сек.':error.message||'сетевая ошибка / CORS';
       errors.push(new URL(endpoint).host+': '+reason);
     }finally{clearTimeout(timeout);}
   }
@@ -101,7 +100,7 @@ async function search(){
     setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
     const chosen=$('subcategory').value;const filters=(chosen!==''&&subcategories[category]?.[Number(chosen)])?[subcategories[category][Number(chosen)][1]]:(categories[category]||categories.all);
     const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
-    const query='[out:json][timeout:25];(\n'+clauses+'\n);out center tags;';
+    const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
     showProgress(35,'Запрос отправлен','Ожидаем ответ картографического сервера. Процент — ориентировочная индикация, не точный таймер');
     const data=await requestOverpass(query);
     showProgress(94,'Обрабатываем результаты','Получено объектов: '+data.elements.length);
