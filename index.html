@@ -12,7 +12,11 @@
     <div class="brand"><div class="brand-mark">L</div><div><b>LeadScout</b><small>Поиск потенциальных клиентов</small></div></div>
     <div class="top-actions"><span class="source-pill">OpenStreetMap · Open data</span><button id="exportBtn" class="button secondary">Экспорт CSV</button></div>
   </header>
-  <main class="layout"><nav class="workspace-nav" aria-label="Разделы приложения"><button class="workspace-tab active" data-view="searchView" type="button">⌕ Поиск компаний</button><button class="workspace-tab" data-view="clientsView" type="button">▤ Клиенты и предложения</button><button class="workspace-tab" data-view="sitesView" type="button">▣ Шаблоны и сайты</button></nav><div id="searchView" class="workspace-view active">
+  <main class="layout"><nav class="workspace-nav" aria-label="Разделы приложения">
+<button class="workspace-tab active" data-view="searchView" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><span>Поиск</span></button>
+<button class="workspace-tab" data-view="clientsView" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2.4"/><path d="M5.5 17c.8-2 2-3 3.5-3s2.7 1 3.5 3M15 9h3M15 13h3"/></svg><span>Клиенты</span></button>
+<button class="workspace-tab" data-view="sitesView" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 8h18M8 3v5m4 4h5m-5 4h5"/></svg><span>Сайты</span></button>
+</nav><div id="searchView" class="workspace-view active">
     <section class="hero">
       <div><p class="eyebrow">ЛИДОГЕНЕРАЦИЯ ДЛЯ ВЕБ-СТУДИИ</p><h1>Находи компании,<br><em>которым нужен сайт</em></h1><p class="hero-copy">Ищи бизнесы по городу и нише, проверяй наличие сайта, сохраняй контакты и готовь персональные предложения.</p></div>
       <div class="hero-stat"><strong id="savedCount">0</strong><span>лидов в базе</span></div>
@@ -24,6 +28,7 @@
         <label class="field"><span>Категория бизнеса</span><select id="category">
           <option value="beauty">Салоны красоты и барбершопы</option><option value="food">Кафе, рестораны и пекарни</option><option value="auto">Автосервисы и автомойки</option><option value="health">Медицина и стоматология</option><option value="construction">Строительство и ремонт</option><option value="fitness">Фитнес и спорт</option><option value="education">Обучение и детские центры</option><option value="lodging">Отели и гостевые дома</option><option value="professional">Услуги и специалисты</option><option value="retail">Магазины</option><option value="all">Все организации</option>
         </select></label>
+        <label class="field"><span>Подкатегория</span><select id="subcategory"><option value="">Все подкатегории</option></select></label>
         <label class="field"><span>Радиус поиска</span><select id="radius"><option value="3000">3 км</option><option value="5000" selected>5 км</option><option value="10000">10 км</option><option value="20000">20 км</option></select></label>
         <button id="searchBtn" class="button primary" type="submit"><span>⌕</span> Найти компании</button>
       </form>
@@ -43,9 +48,9 @@
     </section>
     </div><div id="clientsView" class="workspace-view" hidden><section class="saved-section panel">
       <div class="section-heading"><div><span class="step">03</span><h2>Моя база лидов</h2></div><span class="muted">Сохраняется в этом браузере</span></div>
-      <div id="savedLeads" class="saved-list"><p class="muted">Пока ничего не сохранено.</p></div>
+      <div id="savedLeads" class="saved-list"><p class="muted">Пока ничего не сохранено.</p></div><section id="outreachWorkspace" class="outreach-workspace" hidden><div class="section-heading"><div><span class="step">04</span><h2>Связаться с клиентом</h2></div><button id="outreachClose" class="mini-btn" type="button">Свернуть</button></div><div id="outreachCompany" class="outreach-company"></div><label class="field"><span>Персональное предложение — можно отредактировать</span><textarea id="outreachMessage" rows="7"></textarea></label><div id="outreachChannels" class="outreach-channels"></div><div class="outreach-actions"><button id="outreachCopy" class="button secondary" type="button">Скопировать текст</button><button id="outreachStatus" class="button primary" type="button">Отметить: написал</button></div><p class="fine-print">Отправка выполняется вручную через выбранный канал. Приложение не рассылает сообщения автоматически.</p></section>
     </section>
-    </div><div id="sitesView" class="workspace-view" hidden><section class="panel template-workspace"><div class="section-heading"><div><span class="step">01</span><h2>Мой шаблон сайта</h2></div><span class="muted">Один шаблон для персонализации сайтов клиентов</span></div><p class="template-intro">Загрузи собственный HTML-файл. Для каждого сохранённого клиента можно заполнить его данные, подставить их в твой дизайн, посмотреть результат и скачать готовую страницу.</p><label class="field"><span>Выбрать HTML-шаблон (.html)</span><input id="templateUpload" type="file" accept=".html,.htm,text/html"></label><p id="templateInfo" class="muted template-current">Шаблон не загружен. Выбери свой HTML-файл.</p><p class="fine-print">Переменные: <code>{{company_name}}</code>, <code>{{title}}</code>, <code>{{phone}}</code>, <code>{{email}}</code>, <code>{{address}}</code>, <code>{{website}}</code>, <code>{{description}}</code>, <code>{{button_text}}</code>, <code>{{services_text}}</code>, <code>{{services_html}}</code>.</p><div class="template-next"><strong>Дальше</strong><span>Открой вкладку «Клиенты и предложения», сохрани компанию и нажми «Сайт / изменить».</span></div></section></div><footer><span>LeadScout · MVP 0.5</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
+    </div><div id="sitesView" class="workspace-view" hidden><section class="panel template-workspace"><div class="section-heading"><div><span class="step">01</span><h2>Мой шаблон сайта</h2></div><span class="muted">Один шаблон для персонализации сайтов клиентов</span></div><p class="template-intro">Загрузи собственный HTML-файл. Для каждого сохранённого клиента можно заполнить его данные, подставить их в твой дизайн, посмотреть результат и скачать готовую страницу.</p><label class="field"><span>Выбрать HTML-шаблон (.html)</span><input id="templateUpload" type="file" accept=".html,.htm,text/html"></label><p id="templateInfo" class="muted template-current">Шаблон не загружен. Выбери свой HTML-файл.</p><p class="fine-print">Переменные: <code>{{company_name}}</code>, <code>{{title}}</code>, <code>{{phone}}</code>, <code>{{email}}</code>, <code>{{address}}</code>, <code>{{website}}</code>, <code>{{description}}</code>, <code>{{button_text}}</code>, <code>{{services_text}}</code>, <code>{{services_html}}</code>.</p><div class="template-next"><strong>Дальше</strong><span>Открой вкладку «Клиенты и предложения», сохрани компанию и нажми «Сайт / изменить».</span></div></section></div><footer><span>LeadScout · MVP 0.6</span><span>Используй публичные деловые контакты и соблюдай правила площадок и требования к персональным данным.</span></footer>
   </main>
   <div id="siteEditor" class="modal-backdrop" hidden>
   <section class="site-editor panel" role="dialog" aria-modal="true" aria-labelledby="siteEditorTitle">
@@ -67,6 +72,6 @@
   </section>
 </div>
 <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="app.js?v=0.5"></script>
+  <script src="app.js?v=0.6"></script>
 </body>
 </html>
