@@ -248,6 +248,34 @@ function syncSiteFieldsToHTML(){
  const draft={...(lead.siteDraft||{}),siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
  try{const generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);html.value=generated;html.dataset.generatedHTML=generated;$('siteNotice').textContent='Данные автоматически применены к HTML. Сохрани сайт, чтобы зафиксировать изменения.';}catch(e){$('siteNotice').textContent=e.message;}
 }
+function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:sessionStorage.getItem('leadscout_publish_password')||''};}
+function savePublishSettings(){
+ const url=$('publishWorkerUrl').value.trim().replace(/\\/+$/,'');
+ const password=$('publishPassword').value;
+ if(url&&!/^https:\\/\\//i.test(url)){toast('Адрес Worker должен начинаться с https://');return}
+ if(url)localStorage.setItem('leadscout_publish_url',url);else localStorage.removeItem('leadscout_publish_url');
+ if(password)sessionStorage.setItem('leadscout_publish_password',password);else sessionStorage.removeItem('leadscout_publish_password');
+ $('publishPassword').value='';
+ $('publishSettingsStatus').textContent=url?'Адрес сохранён. Пароль действует только до закрытия вкладки.':'Адрес Worker не задан.';
+ toast('Настройки публикации сохранены');
+}
+async function publishSite(){
+ saveSiteDraft();
+ const id=$('siteLeadId').value,lead=siteLead(id),html=$('siteHTML').value.trim(),cfg=publishConfig();
+ if(!lead||!html){toast('Сначала подготовь HTML сайта');return}
+ if(!cfg.url||!cfg.password){toast('Укажи адрес Worker и пароль публикации');return}
+ const btn=$('sitePublish');btn.disabled=true;btn.textContent='Публикуем…';
+ $('publishResult').textContent='Отправляем сайт на защищённый сервер публикации…';
+ try{
+  const response=await fetch(cfg.url.replace(/\\/+$/,'')+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:lead.name,html})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||('Ошибка публикации HTTP '+response.status));
+  const saved=state.saved.find(x=>x.id===id);if(saved){saved.siteDraft={...(saved.siteDraft||{}),publishedUrl:data.url,publishedAt:new Date().toISOString(),publishedPath:data.path};persist();}
+  $('publishResult').innerHTML='Сайт опубликован: <a href="'+esc(data.url)+'" target="_blank" rel="noopener">'+esc(data.url)+'</a>';
+  toast('Сайт опубликован. Ссылка готова.');
+ }catch(error){$('publishResult').textContent='Не удалось опубликовать: '+(error.message||'ошибка соединения');}
+ finally{btn.disabled=false;btn.textContent='Опубликовать / обновить сайт';}
+}
 function previewSiteDraft(){
  saveSiteDraft();
  const html=$('siteHTML').value;if(!html.trim()){toast('Сначала загрузи шаблон или вставь HTML-код');return}
@@ -293,7 +321,7 @@ $('siteClose').addEventListener('click',closeSiteEditor);
 ['siteName','siteTitle','sitePhone','siteEmail','siteAddress','siteDescription','siteServices','siteButton'].forEach(id=>$(id).addEventListener('input',syncSiteFieldsToHTML));
 $('siteHTML').addEventListener('input',()=>{if($('siteHTML').value!==$('siteHTML').dataset.generatedHTML)$('siteNotice').textContent='В HTML внесены ручные изменения. Они сохранятся отдельно от шаблона.';});
 $('siteSave').addEventListener('click',saveSiteDraft);
-$('siteDownload').addEventListener('click',downloadSiteDraft);
+$('siteDownload').addEventListener('click',downloadSiteDraft);\n$('sitePublish').addEventListener('click',publishSite);\n$('savePublishSettings').addEventListener('click',savePublishSettings);
 $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
