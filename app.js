@@ -203,14 +203,14 @@ function openSiteEditor(id){
   $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
   $('siteButton').value=cfg.button||'Оставить заявку';
   $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Полный HTML будет сохранён отдельно для этого клиента.';
-  try{const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial)}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
+  try{const category=lead.categoryKey||lead.categoryId||$('category').value;const source=cfg.templateHTML||getTemplate(category);const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial,source);$('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||$('siteHTML').value;$('siteHTML').dataset.templateHTML=source||''}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
 }
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
   const id=$('siteLeadId').value;
   let lead=state.saved.find(x=>x.id===id);
   if(!lead){const found=state.results.find(x=>x.id===id);if(!found)return;lead={...found};state.saved.unshift(lead);}
-  lead.siteDraft={...(lead.siteDraft||{}),siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim(),customHTML:$('siteHTML').value};
+  lead.siteDraft={...(lead.siteDraft||{}),siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim(),templateHTML:$('siteHTML').dataset.templateHTML||'',lastGeneratedHTML:$('siteHTML').dataset.generatedHTML||'',customHTML:$('siteHTML').value};
   persist();renderResults();renderSaved();toast('Данные сайта сохранены отдельно для этой компании');
 }
 function getTemplate(category){try{const all=JSON.parse(localStorage.getItem('leadscout_html_templates')||'{}');return all[category]||all.all||localStorage.getItem('leadscout_html_template')||''}catch{return ''}}
@@ -233,12 +233,20 @@ function showWorkspace(id){
  window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.workspace-tab').forEach(v=>v.addEventListener('click',()=>showWorkspace(v.dataset.view)));
-function buildCustomizedHTML(lead){
- const template=getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
+function buildCustomizedHTML(lead,sourceTemplate){
+ const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
  const services=String(d.services||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const values={company_name:d.siteName||lead.name,title:d.title||lead.name,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
  return template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
+}
+function syncSiteFieldsToHTML(){
+ const html=$('siteHTML');if(!html||!$('siteLeadId').value)return;
+ const current=html.value,baseline=html.dataset.generatedHTML||'';
+ if(current!==baseline){$('siteNotice').textContent='HTML изменён вручную. Чтобы применить поля формы, нажми «Заново подставить данные в шаблон» — ручные изменения кода при этом заменятся шаблоном.';return;}
+ const lead=siteLead($('siteLeadId').value);if(!lead)return;
+ const draft={...(lead.siteDraft||{}),siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
+ try{const generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);html.value=generated;html.dataset.generatedHTML=generated;$('siteNotice').textContent='Данные автоматически применены к HTML. Сохрани сайт, чтобы зафиксировать изменения.';}catch(e){$('siteNotice').textContent=e.message;}
 }
 function previewSiteDraft(){
  saveSiteDraft();
@@ -251,7 +259,7 @@ function downloadSiteDraft(){
  const html=$('siteHTML').value;if(!html.trim()){toast('HTML пустой — нечего скачивать');return}
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='index-'+id+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('Готовый HTML сайта скачан');
 }
-function regenerateSiteHTML(){const id=$('siteLeadId').value,lead=siteLead(id);if(!lead)return;try{$('siteHTML').value=buildCustomizedHTML({...lead,siteDraft:{...(lead.siteDraft||{}),siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value,customHTML:''}});toast('HTML заново сформирован из шаблона')}catch(e){toast(e.message)}}
+function regenerateSiteHTML(){const id=$('siteLeadId').value,lead=siteLead(id);if(!lead)return;try{const source=$('siteHTML').dataset.templateHTML||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);const generated=buildCustomizedHTML({...lead,siteDraft:{...(lead.siteDraft||{}),siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}},source);$('siteHTML').dataset.templateHTML=source;$('siteHTML').dataset.generatedHTML=generated;$('siteHTML').value=generated;toast('Данные заново применены к HTML из исходного шаблона')}catch(e){toast(e.message)}}
 
 
 document.addEventListener('click',async e=>{
@@ -282,6 +290,8 @@ $('filterInput').addEventListener('input',renderResults);
 $('websiteFilter').addEventListener('change',renderResults);
 $('exportBtn').addEventListener('click',exportCSV);
 $('siteClose').addEventListener('click',closeSiteEditor);
+['siteName','siteTitle','sitePhone','siteEmail','siteAddress','siteDescription','siteServices','siteButton'].forEach(id=>$(id).addEventListener('input',syncSiteFieldsToHTML));
+$('siteHTML').addEventListener('input',()=>{if($('siteHTML').value!==$('siteHTML').dataset.generatedHTML)$('siteNotice').textContent='В HTML внесены ручные изменения. Они сохранятся отдельно от шаблона.';});
 $('siteSave').addEventListener('click',saveSiteDraft);
 $('siteDownload').addEventListener('click',downloadSiteDraft);
 $('sitePreview').addEventListener('click',previewSiteDraft);
