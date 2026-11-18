@@ -30,6 +30,7 @@ function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('sho
 function setStatus(msg){$('searchStatus').textContent=msg}
 function tagValue(tags,keys){for(const k of keys){if(tags[k])return tags[k]}return ''}
 function siteUrl(v){if(!v)return '';let s=v.trim();if(!/^https?:\/\//i.test(s))s='https://'+s;try{return new URL(s).href}catch{return ''}}
+function distanceMeters(lat1,lon1,lat2,lon2){const toRad=v=>v*Math.PI/180;const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1),a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;return 6371000*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
 function extract(el){
   const t=el.tags||{},name=t.name||t.brand||t.operator||'Без названия';
   const website=tagValue(t,['website','contact:website','url']);
@@ -92,10 +93,11 @@ async function search(){
   $('searchBtn').disabled=true;$('searchBtn').textContent='Ищем…';startProgress();setStatus('Определяем координаты города…');
   try{
     showProgress(12,'Определяем местоположение','Ищем координаты: '+city);
-    const geoController=new AbortController();const geoTimer=setTimeout(()=>geoController.abort(),12000);let geo;try{geo=await fetch(API_NOMINATIM+'?format=jsonv2&limit=1&q='+encodeURIComponent(city),{headers:{'Accept-Language':'ru'},signal:geoController.signal});}finally{clearTimeout(geoTimer)}
+    const geoController=new AbortController();const geoTimer=setTimeout(()=>geoController.abort(),12000);let geo;const geoParams=new URLSearchParams({format:'jsonv2',limit:'1',addressdetails:'1',countrycodes:'ru',q:city+', Россия'});try{geo=await fetch(API_NOMINATIM+'?'+geoParams.toString(),{headers:{'Accept-Language':'ru'},signal:geoController.signal});}finally{clearTimeout(geoTimer)}
     if(!geo.ok)throw new Error('Не удалось обратиться к геокодеру. Попробуй позже.');
-    const places=await geo.json();if(!places.length)throw new Error('Город не найден. Уточни название.');
-    const {lat,lon,display_name}=places[0];
+    const places=await geo.json();if(!places.length)throw new Error('Город не найден в России. Уточни название.');
+    const place=places[0];if(place.address?.country_code!=='ru')throw new Error('Не удалось подтвердить, что выбранный населённый пункт находится в России.');
+    const {lat,lon,display_name}=place;
     showProgress(27,'Формируем запрос','Радиус '+(radius/1000)+' км · '+display_name);
     setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
     const chosen=$('subcategory').value;const filters=(chosen!==''&&subcategories[category]?.[Number(chosen)])?[subcategories[category][Number(chosen)][1]]:(categories[category]||categories.all);
@@ -103,10 +105,12 @@ async function search(){
     const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
     showProgress(35,'Запрос отправлен','Ожидаем ответ картографического сервера. Процент — ориентировочная индикация, не точный таймер');
     const data=await requestOverpass(query);
-    showProgress(94,'Обрабатываем результаты','Получено объектов: '+data.elements.length);
-    const seen=new Set();state.results=data.elements.map(extract).filter(x=>x.name!=='Без названия').filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true}).sort((a,b)=>Number(!a.website)-Number(!b.website));
+    showProgress(94,'Проверяем географию результатов','Получено объектов: '+data.elements.length+' · проверяем расстояние до центра города');
+    const seen=new Set();const mapped=data.elements.map(extract).filter(x=>x.name!=='Без названия').filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true});
+    const centerLat=Number(lat),centerLon=Number(lon);const withinRadius=mapped.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&distanceMeters(centerLat,centerLon,x.lat,x.lon)<=radius);
+    const outsideCount=mapped.length-withinRadius.length;state.results=withinRadius.sort((a,b)=>Number(!a.website)-Number(!b.website));
     renderResults();const missing=state.results.filter(x=>!x.website).length;
-    setStatus('Готово: найдено '+state.results.length+' компаний. Без указанного сайта: '+missing+'.');
+    setStatus('Готово: найдено '+state.results.length+' компаний в радиусе '+(radius/1000)+' км. Исключено за пределами радиуса: '+outsideCount+'. Без указанного сайта: '+missing+'.');
     finishProgress(true);
   }catch(e){setStatus(e.name==='AbortError'?'Геокодер не ответил за 12 секунд. Попробуй ещё раз.':(e.message||'Ошибка поиска.'));finishProgress(false);}
   finally{$('searchBtn').disabled=false;$('searchBtn').innerHTML='<span>⌕</span> Найти компании'}
