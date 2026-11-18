@@ -1,7 +1,7 @@
 const API_NOMINATIM = "https://nominatim.openstreetmap.org/search";
 const API_OVERPASS = [
-  "https://overpass.private.coffee/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
   "https://overpass-api.de/api/interpreter"
 ];
 const $ = (id) => document.getElementById(id);
@@ -42,27 +42,22 @@ async function requestOverpass(query){
   const errors=[];
   for(let i=0;i<API_OVERPASS.length;i++){
     const endpoint=API_OVERPASS[i];
-    setStatus('Подключаемся к картографическому серверу '+(i+1)+' из '+API_OVERPASS.length+'…');
+    setStatus('Запрос к картографическому серверу '+(i+1)+' из '+API_OVERPASS.length+'…');
+    showProgress(36+i*4,'Получаем список компаний','Сервер '+(i+1)+' из '+API_OVERPASS.length+' · максимум 16 секунд на попытку');
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),35000);
+    const timeout=setTimeout(()=>controller.abort(),16000);
     try{
-      const response=await fetch(endpoint,{
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-        body:'data='+encodeURIComponent(query),
-        signal:controller.signal
-      });
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query}),signal:controller.signal});
       if(!response.ok)throw new Error('HTTP '+response.status);
       const data=await response.json();
-      if(!data||!Array.isArray(data.elements))throw new Error('Некорректный ответ сервера');
+      if(!data||!Array.isArray(data.elements))throw new Error('Сервер вернул ответ без списка объектов');
       return data;
     }catch(error){
-      errors.push(endpoint+': '+(error.name==='AbortError'?'тайм-аут':error.message||'ошибка сети'));
-    }finally{
-      clearTimeout(timeout);
-    }
+      const reason=error.name==='AbortError'?'превышено время ожидания':error.message||'ошибка сети или CORS';
+      errors.push(new URL(endpoint).host+': '+reason);
+    }finally{clearTimeout(timeout);}
   }
-  throw new Error('Все серверы OpenStreetMap временно недоступны или перегружены. Подожди 1–2 минуты и повтори поиск.');
+  throw new Error('Не удалось получить данные с картографических серверов. '+errors.join(' · '));
 }
 let progressTimer=null, searchStartedAt=0, progressValue=0;
 function showProgress(value,stage,detail=''){
@@ -94,7 +89,7 @@ async function search(){
   $('searchBtn').disabled=true;$('searchBtn').textContent='Ищем…';startProgress();setStatus('Определяем координаты города…');
   try{
     showProgress(12,'Определяем местоположение','Ищем координаты: '+city);
-    const geo=await fetch(API_NOMINATIM+'?format=jsonv2&limit=1&q='+encodeURIComponent(city),{headers:{'Accept-Language':'ru'}});
+    const geoController=new AbortController();const geoTimer=setTimeout(()=>geoController.abort(),12000);let geo;try{geo=await fetch(API_NOMINATIM+'?format=jsonv2&limit=1&q='+encodeURIComponent(city),{headers:{'Accept-Language':'ru'},signal:geoController.signal});}finally{clearTimeout(geoTimer)}
     if(!geo.ok)throw new Error('Не удалось обратиться к геокодеру. Попробуй позже.');
     const places=await geo.json();if(!places.length)throw new Error('Город не найден. Уточни название.');
     const {lat,lon,display_name}=places[0];
@@ -102,7 +97,7 @@ async function search(){
     setStatus('Ищем компании в радиусе '+(radius/1000)+' км от '+display_name+'…');
     const filters=categories[category]||categories.all;
     const clauses=filters.map(f=>f==='healthcare'?'nwr(around:'+radius+','+lat+','+lon+')[healthcare];':f==='sport'?'nwr(around:'+radius+','+lat+','+lon+')[sport];':f==='shop'||f==='craft'?'nwr(around:'+radius+','+lat+','+lon+')['+f+'];':'nwr(around:'+radius+','+lat+','+lon+')['+f+'];').join('\n');
-    const query='[out:json][timeout:45];(\n'+clauses+'\n);out center tags;';
+    const query='[out:json][timeout:25];(\n'+clauses+'\n);out center tags;';
     showProgress(35,'Запрос отправлен','Ожидаем ответ картографического сервера. Процент — ориентировочная индикация, не точный таймер');
     const data=await requestOverpass(query);
     showProgress(94,'Обрабатываем результаты','Получено объектов: '+data.elements.length);
@@ -110,7 +105,7 @@ async function search(){
     renderResults();const missing=state.results.filter(x=>!x.website).length;
     setStatus('Готово: найдено '+state.results.length+' компаний. Без указанного сайта: '+missing+'.');
     finishProgress(true);
-  }catch(e){setStatus(e.message||'Ошибка поиска.');finishProgress(false);}
+  }catch(e){setStatus(e.name==='AbortError'?'Геокодер не ответил за 12 секунд. Попробуй ещё раз.':(e.message||'Ошибка поиска.'));finishProgress(false);}
   finally{$('searchBtn').disabled=false;$('searchBtn').innerHTML='<span>⌕</span> Найти компании'}
 }
 function profileUrl(value,platform){
