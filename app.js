@@ -216,7 +216,8 @@ function getTemplate(){try{return localStorage.getItem('leadscout_html_template'
 function setTemplate(html,name){
  try{localStorage.setItem('leadscout_html_template',html);localStorage.setItem('leadscout_html_template_name',name||'custom-template.html')}
  catch(e){throw new Error('HTML-шаблон не помещается в хранилище браузера. Уменьши размер файла.')}
- renderTemplateInfo();
+ renderVkCollectorConfig();
+renderTemplateInfo();
 }
 function renderTemplateInfo(){
  const name=localStorage.getItem('leadscout_html_template_name')||'';
@@ -253,6 +254,38 @@ function downloadSiteDraft(){
  }catch(e){toast(e.message)}
 }
 
+
+function vkWorkerUrl(){try{return localStorage.getItem('leadscout_vk_worker_url')||''}catch{return ''}}
+function renderVkCollectorConfig(){const field=$('vkWorkerUrl');if(field)field.value=vkWorkerUrl()}
+function saveVkWorkerUrl(){const field=$('vkWorkerUrl');if(!field)return;const value=field.value.trim().replace(/\/$/,'');if(value){try{const u=new URL(value);if(u.protocol!=='https:')throw new Error();localStorage.setItem('leadscout_vk_worker_url',value)}catch{toast('Укажи корректный HTTPS-адрес Cloudflare Worker');return}}else localStorage.removeItem('leadscout_vk_worker_url');toast(value?'Адрес сборщика сохранён в этом браузере':'Адрес сборщика очищен')}
+async function collectVkCommunities(){
+ const endpoint=vkWorkerUrl();if(!endpoint){toast('Сначала укажи адрес Cloudflare Worker');$('vkWorkerUrl')?.focus();return}
+ const city=$('city').value.trim(),category=$('category').value;
+ if(!city){toast('Укажи город');return}
+ const button=$('vkCollectBtn');if(button){button.disabled=true;button.textContent='Собираем…'}
+ setStatus('Ищем публичные сообщества ВКонтакте по городу '+city+'…');
+ try{
+  const url=endpoint.endsWith('/search')?endpoint:endpoint+'/search';
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city,category,categoryLabel:categoryNames[category]||category})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||('Ошибка сборщика: HTTP '+response.status));
+  if(!data.ok)throw new Error(data.message||data.error||'Сборщик не вернул результат');
+  let added=0,updated=0;
+  for(const lead of (data.results||[])){
+   const sameId=state.results.find(x=>x.id===lead.id);
+   const normalized=String(lead.name||'').toLocaleLowerCase('ru').replace(/[^а-яёa-z0-9]/gi,'');
+   const sameName=state.results.find(x=>String(x.name||'').toLocaleLowerCase('ru').replace(/[^а-яёa-z0-9]/gi,'')===normalized && normalized.length>4 && x.source==='OpenStreetMap');
+   if(sameId){Object.assign(sameId,lead);updated++;continue}
+   if(sameName){sameName.social=sameName.social||{};sameName.social.vk=lead.social?.vk;sameName.socialSources={...(sameName.socialSources||{}),vk:'VK API'};sameName.note=(sameName.note?sameName.note+'\n':'')+'Найдена публичная страница VK: '+lead.social?.vk;updated++;continue}
+   state.results.push(lead);added++;
+  }
+  state.results.sort((a,b)=>Number(!!a.website)-Number(!!b.website));
+  renderResults();
+  setStatus('VK: найдено '+(data.count||0)+' сообществ в городе '+data.city+'. Добавлено новых карточек: '+added+', дополнено совпадающих: '+updated+'. Адреса сообществ не подтверждены автоматически.');
+ }catch(error){setStatus('Поиск VK не выполнен: '+(error.message||'ошибка'));toast(error.message||'Ошибка поиска VK')}
+ finally{if(button){button.disabled=false;button.textContent='Собрать компании из VK'}}
+}
+
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.dataset.save)saveLead(b.dataset.save);
@@ -265,6 +298,8 @@ document.addEventListener('click',async e=>{
  if(b.dataset.socialSearch){const lead=state.results.find(x=>x.id===b.dataset.socialSearch)||state.saved.find(x=>x.id===b.dataset.socialSearch);if(lead){let saved=state.saved.find(x=>x.id===lead.id);if(!saved){saved={...lead};state.saved.unshift(saved);persist()}showWorkspace('clientsView');openOutreach(saved.id);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}}
  if(b.dataset.socialDiscovery){const city=$('city').value.trim();const category=categoryNames[$('category').value]||'компании';const sub=$('subcategory').selectedOptions[0]?.textContent||'';const q=[city,sub&&sub!=='Все подкатегории'?sub:category].filter(Boolean).join(' ');openSocialSearch(b.dataset.socialDiscovery,q);}
  if(b.id==='saveSocials'){const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(lead){lead.social=lead.social||{};lead.social.vk=$('socialVk').value.trim();lead.social.telegram=$('socialTelegram').value.trim();lead.social.instagram=$('socialInstagram').value.trim();lead.socialSources={updatedAt:new Date().toISOString(),method:'Проверено вручную по публичной странице'};persist();renderResults();openOutreach(id);toast('Социальные ссылки сохранены в карточке');}}
+ if(b.dataset.vkCollect!==undefined)collectVkCommunities();
+ if(b.id==='saveVkWorkerUrl')saveVkWorkerUrl();
  if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
