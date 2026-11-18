@@ -59,7 +59,7 @@ function profileUrl(value,platform){
  if(!value)return '';
  const raw=value.trim();
  if(raw.startsWith('http://')||raw.startsWith('https://'))return raw;
- const handle=raw.replace(/^@/,'').replace(/^\\//,'');
+ const handle=raw.replace(/^@/,'').replaceAll('/','');
  if(platform==='telegram')return 'https://t.me/'+handle;
  if(platform==='vk')return 'https://vk.com/'+handle;
  if(platform==='max')return 'https://max.ru/'+handle;
