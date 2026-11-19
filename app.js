@@ -194,7 +194,7 @@ function openSiteEditor(id){
   const cfg=lead.siteDraft||{};
   const originalName=String(lead.name||'').trim();
   const newName=String(cfg.siteName||originalName).trim();
-  const oldTitle=String(cfg.title||('Услуги компании '+originalName)).trim();
+  const oldTitle=String(cfg.title||newName||originalName).trim();
   let newTitle=oldTitle;
   if(originalName&&newName&&originalName!==newName)newTitle=replaceHTMLText(newTitle,originalName,newName);
   $('siteEditor').hidden=false;
@@ -217,9 +217,11 @@ function openSiteEditor(id){
     // the editor opens; customHTML previously bypassed template substitution.
     const oldNames=[originalName,cfg.previousAppliedName,cfg.publishedCompanyName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newName&&a.indexOf(x)===i);
     oldNames.forEach(name=>{html=replaceHTMLText(html,name,newName);});
-    const oldTitles=[cfg.previousAppliedTitle,oldTitle,'Услуги компании '+originalName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
+    const oldTitles=[cfg.previousAppliedTitle,oldTitle,(newName||originalName)].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
     oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
+    html=applyBrandIdentity(html,newName);
     html=replaceBrandFromMetadata(html,newTitle||newName);
+    html=applyPrimarySiteHeading(html,newTitle||newName);
     $('siteHTML').value=html;
     let baseline=cfg.lastGeneratedHTML||cfg.customHTML||html;
     baseline=replaceBrandFromMetadata(baseline,newTitle||newName);
@@ -229,7 +231,7 @@ function openSiteEditor(id){
     $('siteHTML').dataset.appliedName=originalName||newName;
     $('siteHTML').dataset.appliedTitle=oldTitle;
     $('siteHTML').dataset.appliedFields=JSON.stringify(cfg.appliedFields||{
-      siteName:cfg.siteName||originalName,title:cfg.title||('Услуги компании '+originalName),
+      siteName:cfg.siteName||originalName,title:cfg.title||(newName||originalName),
       phone:cfg.phone??lead.phone??'',email:cfg.email??lead.email??'',address:cfg.address??lead.address??'',
       description:cfg.description||'',services:cfg.services||'',button:cfg.button||'Оставить заявку'
     });
@@ -287,14 +289,32 @@ function applyPrimarySiteHeading(source,heading){
  let html=String(source||'');
  const text=String(heading||'').trim();
  if(!text)return html;
+ const words=text.split(/\s+/).filter(Boolean);
+ const lines=[];
+ if(words.length)lines.push('<span class="l"><span>'+esc(words[0])+'</span></span>');
+ if(words.length>1)lines.push('<span class="l"><span class="acc">'+esc(words[1])+'</span></span>');
+ if(words.length>2)lines.push('<span class="l"><span class="outl">'+esc(words.slice(2).join(' '))+'</span></span>');
+ const markup=lines.join('');
+ html=html.replace(/(<h1\b[^>]*>)[\s\S]*?(<\/h1\s*>)/i,(_,open,close)=>open+markup+close);
  const safe=esc(text);
- html=html.replace(/(<h1\b[^>]*>)[\s\S]*?(<\/h1\s*>)/i,(_,open,close)=>open+safe+close);
- if(/<title\b[^>]*>[\s\S]*?<\/title>/i.test(html)){
-  html=html.replace(/(<title\b[^>]*>)[\s\S]*?(<\/title\s*>)/i,(_,open,close)=>open+safe+close);
- }
+ if(/<title\b[^>]*>[\s\S]*?<\/title>/i.test(html))html=html.replace(/(<title\b[^>]*>)[\s\S]*?(<\/title\s*>)/i,(_,open,close)=>open+safe+close);
  html=html.replace(/<meta\b(?=[^>]*\bproperty\s*=\s*["']og:title["'])[^>]*>/i,tag=>{
   if(/\bcontent\s*=\s*["'][^"']*["']/i.test(tag))return tag.replace(/(\bcontent\s*=\s*["'])[^"']*(["'])/i,'$1'+safe+'$2');
   return tag.replace(/\s*\/?>$/,' content="'+safe+'">');
+ });
+ return html;
+}
+function applyBrandIdentity(source,brandName){
+ let html=String(source||'');
+ const brand=String(brandName||'').trim().replace(/^сайт\s+/i,'').replace(/^услуги компании\s+/i,'').trim();
+ if(!brand)return html;
+ html=replaceHTMLText(html,'ГРАФИТ',brand);
+ html=replaceHTMLText(html,'GRAFIT',brand);
+ html=html.replace(/(<a\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*>)[\s\S]*?(<\/a>)/i,(_,open,close)=>{
+  const parts=brand.split(/\s+/).filter(Boolean);
+  const mark=parts.length>1?esc(parts[0])+' <b>'+esc(parts.slice(1).join(' '))+'</b>':esc(brand);
+  const reg='<span class="reg">® 2026</span>';
+  return open+mark+reg+close;
  });
  return html;
 }
@@ -341,6 +361,7 @@ function buildCustomizedHTML(lead,sourceTemplate){
  if(previousName&&company&&previousName!==company)result=replaceHTMLText(result,previousName,company);
  if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
  if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
+ result=applyBrandIdentity(result,company);
  result=replaceBrandFromMetadata(result,title||company);
  result=applyPrimarySiteHeading(result,title||company);
  return result;
@@ -376,6 +397,7 @@ function syncSiteFieldsToHTML(){
   let previousFields={};try{previousFields=JSON.parse(html.dataset.appliedFields||'{}')}catch{}
   const nextFields={siteName:newName,title:newTitle,phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,services:draft.services,button:draft.button};
   generated=replaceSavedSiteFields(generated,previousFields,nextFields);
+  generated=applyBrandIdentity(generated,newName);
   generated=replaceBrandFromMetadata(generated,newTitle||newName);
   generated=applyPrimarySiteHeading(generated,newTitle||newName);
   html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;html.dataset.appliedFields=JSON.stringify(nextFields);
