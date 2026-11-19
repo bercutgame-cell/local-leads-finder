@@ -411,7 +411,23 @@ function savePublishSettings(){
  const btn=$('sitePublish');btn.disabled=true;btn.textContent='Публикуем…';
  $('publishResult').textContent='Отправляем сайт на защищённый сервер публикации…';
  try{
-  const response=await fetch(cfg.url+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:publishName||lead.name,html})});
+  // First verify that the configured Worker is reachable. This separates
+  // a bad Worker URL/network/CORS problem from a GitHub publishing failure.
+  let health;
+  try{
+   health=await fetch(cfg.url+'/health',{method:'GET',cache:'no-store'});
+  }catch(error){
+   throw new Error('Worker недоступен ('+(error.message||'ошибка сети')+'). Проверь адрес Worker и настройки CORS. Сам HTML не отправлен.');
+  }
+  if(!health.ok)throw new Error('Worker ответил на /health кодом HTTP '+health.status+'. Проверь адрес и публикацию Worker.');
+  const healthData=await health.json().catch(()=>({}));
+  if(!healthData.ok)throw new Error('Worker доступен, но проверка /health не пройдена.');
+  let response;
+  try{
+   response=await fetch(cfg.url+'/publish',{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:publishName||lead.name,html})});
+  }catch(error){
+   throw new Error('Worker отвечает, но запрос публикации заблокирован ('+(error.message||'CORS/сеть')+'). Проверь CORS Worker и разрешённый домен https://bercutgame-cell.github.io.');
+  }
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok)throw new Error(data.error||('Ошибка публикации HTTP '+response.status));
   const saved=state.saved.find(x=>x.id===id);if(saved){saved.siteDraft={...(saved.siteDraft||{}),publishedUrl:data.url,publishedAt:new Date().toISOString(),publishedPath:data.path,publishedCompanyName:publishName||lead.name};persist();renderSaved();}
