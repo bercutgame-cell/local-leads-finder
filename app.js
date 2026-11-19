@@ -353,15 +353,19 @@ function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url
 function savePublishSettings(){
  let url=$('publishWorkerUrl').value.trim();
  while(url.endsWith('/'))url=url.slice(0,-1);
- const password=$('publishPassword').value;
+ const enteredPassword=$('publishPassword').value.trim();
+ const savedPassword=localStorage.getItem('leadscout_publish_password')||sessionStorage.getItem('leadscout_publish_password')||'';
  if(url&&!url.startsWith('https://')){toast('Адрес Worker должен начинаться с https://');return}
  if(url)localStorage.setItem('leadscout_publish_url',url);else localStorage.removeItem('leadscout_publish_url');
- if(password)localStorage.setItem('leadscout_publish_password',password);else localStorage.removeItem('leadscout_publish_password');sessionStorage.removeItem('leadscout_publish_password');
+ // An empty password field means "keep the saved password", not "delete it".
+ if(enteredPassword)localStorage.setItem('leadscout_publish_password',enteredPassword);
+ else if(savedPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',savedPassword);
+ sessionStorage.removeItem('leadscout_publish_password');
  $('publishPassword').value='';
- $('publishSettingsStatus').textContent=url?'Адрес сохранён. Пароль действует только до закрытия вкладки.':'Адрес Worker не задан.';
- toast('Настройки публикации сохранены');
-}
-async function publishSite(){
+ const hasPassword=!!(enteredPassword||savedPassword);
+ $('publishSettingsStatus').textContent=url?(hasPassword?'Адрес и пароль сохранены на этом устройстве. Повторный ввод не требуется.':'Адрес сохранён. Добавь пароль Worker один раз.'):'Адрес Worker не задан.';
+ toast(hasPassword?'Настройки публикации сохранены':'Сохранён адрес Worker');
+}async function publishSite(){
  saveSiteDraft();
  const id=$('siteLeadId').value,lead=siteLead(id),html=$('siteHTML').value.trim(),cfg=publishConfig(),publishName=$('siteName').value.trim();
  if(!lead||!html){toast('Сначала подготовь HTML сайта');return}
@@ -439,7 +443,7 @@ $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name,$('templateCategory').value);toast('HTML-шаблон загружен для выбранной категории')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
-const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;const legacyPublishPassword=sessionStorage.getItem('leadscout_publish_password')||'';if(legacyPublishPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',legacyPublishPassword);sessionStorage.removeItem('leadscout_publish_password');
+const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;const legacyPublishPassword=sessionStorage.getItem('leadscout_publish_password')||'';if(legacyPublishPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',legacyPublishPassword);sessionStorage.removeItem('leadscout_publish_password');if($('publishSettingsStatus'))$('publishSettingsStatus').textContent=savedPublishUrl?(localStorage.getItem('leadscout_publish_password')?'Адрес и пароль сохранены на этом устройстве. Повторный ввод не требуется.':'Адрес сохранён. Добавь пароль Worker один раз.'):'Сервер публикации пока не подключён.';
 renderTemplateInfo();
 renderSaved();
 showWorkspace('searchView');
