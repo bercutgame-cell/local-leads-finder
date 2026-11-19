@@ -236,6 +236,14 @@ function showWorkspace(id){
  window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.workspace-tab').forEach(v=>v.addEventListener('click',()=>showWorkspace(v.dataset.view)));
+function replaceHTMLText(source,oldValue,newValue){
+ const oldText=String(oldValue||''),nextText=String(newValue||'');
+ if(!oldText||!nextText||oldText===nextText)return source;
+ const variants=[oldText,esc(oldText)];
+ let result=source;
+ for(const value of variants)result=result.split(value).join(esc(nextText));
+ return result;
+}
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
@@ -243,10 +251,11 @@ function buildCustomizedHTML(lead,sourceTemplate){
  const company=String(d.siteName||lead.name||'').trim(),title=String(d.title||company||lead.name||'').trim();
  const values={company_name:company,title,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
  let result=template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
- // Also replace a hard-coded original business name in templates that do not use placeholders.
- if(lead.name&&company&&lead.name!==company)result=result.split(String(lead.name)).join(esc(company));
- const previousTitle=String((lead.siteDraft||{}).previousAppliedTitle||'').trim();
- if(previousTitle&&title&&previousTitle!==title)result=result.split(previousTitle).join(esc(title));
+ const previousName=String(d.previousAppliedName||d.siteName||lead.name||'').trim();
+ const previousTitle=String(d.previousAppliedTitle||d.title||'').trim();
+ if(previousName&&company&&previousName!==company)result=replaceHTMLText(result,previousName,company);
+ if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
+ if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
  return result;
 }
 function syncSiteFieldsToHTML(){
@@ -258,17 +267,20 @@ function syncSiteFieldsToHTML(){
  const draft={...(lead.siteDraft||{}),siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
  try{
   let generated;
-  if(current===baseline){generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);}
-  else{
-   generated=current;
-   if(oldName&&newName&&oldName!==newName)generated=generated.split(oldName).join(esc(newName));
-   if(lead.name&&newName&&lead.name!==newName)generated=generated.split(String(lead.name)).join(esc(newName));
-   if(oldTitle&&newTitle&&oldTitle!==newTitle)generated=generated.split(oldTitle).join(esc(newTitle));
+  if(current===baseline){
+   generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);
+   html.dataset.generatedHTML=generated;
+  }else{
+   // Manual HTML edits are preserved. Keep the original baseline unchanged so
+   // subsequent field edits do not mistakenly rebuild from the template.
+   generated=replaceHTMLText(current,oldName,newName);
+   generated=replaceHTMLText(generated,lead.name,newName);
+   generated=replaceHTMLText(generated,oldTitle,newTitle);
    const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
    Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
   }
-  html.value=generated;html.dataset.generatedHTML=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;
-  $('siteNotice').textContent='Название и данные применены к HTML. Ручная разметка сохранена. Сохрани сайт перед публикацией.';
+  html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;
+  $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
 }
 function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:sessionStorage.getItem('leadscout_publish_password')||''};}
@@ -329,6 +341,14 @@ document.addEventListener('click',async e=>{
  if(b.id==='saveSocials'){const id=$('outreachWorkspace').dataset.leadId;const lead=state.saved.find(x=>x.id===id);if(lead){lead.social=lead.social||{};lead.social.vk=$('socialVk').value.trim();lead.social.telegram=$('socialTelegram').value.trim();lead.social.instagram=$('socialInstagram').value.trim();lead.socialSources={updatedAt:new Date().toISOString(),method:'Проверено вручную по публичной странице'};persist();renderResults();openOutreach(id);toast('Социальные ссылки сохранены в карточке');}}
  if(b.dataset.site)openSiteEditor(b.dataset.site);
  if(b.dataset.copy){const l=state.results.find(x=>x.id===b.dataset.copy);if(l){await navigator.clipboard.writeText(messageFor(l));toast('Текст скопирован — персонализируй перед отправкой')}}
+ if(b.dataset.copyUrl){
+  const value=b.dataset.copyUrl;
+  try{
+   if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(value);
+   else{const field=document.createElement('textarea');field.value=value;field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();const ok=document.execCommand('copy');field.remove();if(!ok)throw new Error('copy failed');}
+   toast('Ссылка скопирована');
+  }catch{toast('Не удалось скопировать. Нажми и удерживай ссылку, чтобы скопировать её вручную.');}
+ }
  if(b.dataset.remove){state.saved=state.saved.filter(x=>x.id!==b.dataset.remove);persist();toast('Удалено из базы')}
  if(b.dataset.outreach){showWorkspace('clientsView');openOutreach(b.dataset.outreach);$('outreachWorkspace').scrollIntoView({behavior:'smooth',block:'start'});}
 });
