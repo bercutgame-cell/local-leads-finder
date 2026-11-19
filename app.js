@@ -192,18 +192,40 @@ function siteLead(id){
 function openSiteEditor(id){
   const lead=siteLead(id);if(!lead)return;
   const cfg=lead.siteDraft||{};
+  const originalName=String(lead.name||'').trim();
+  const newName=String(cfg.siteName||originalName).trim();
+  const oldTitle=String(cfg.title||('Услуги компании '+originalName)).trim();
+  let newTitle=oldTitle;
+  if(originalName&&newName&&originalName!==newName)newTitle=replaceHTMLText(newTitle,originalName,newName);
   $('siteEditor').hidden=false;
   $('siteLeadId').value=id;
-  $('siteName').value=cfg.siteName||lead.name;
-  $('siteTitle').value=cfg.title||('Услуги компании '+lead.name);
+  $('siteName').value=newName;
+  $('siteTitle').value=newTitle;
   $('sitePhone').value=cfg.phone??lead.phone??'';
   $('siteEmail').value=cfg.email??lead.email??'';
   $('siteAddress').value=cfg.address??lead.address??'';
-  $('siteDescription').value=cfg.description||('Расскажите о компании '+lead.name+', её преимуществах и услугах.');
-  $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
+  $('siteDescription').value=cfg.description||('Расскажите о компании '+newName+', её преимуществах и услугах.');
+  $('siteServices').value=cfg.services||'Консультация — уточнить цену\\nОсновная услуга — уточнить цену';
   $('siteButton').value=cfg.button||'Оставить заявку';
-  $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Полный HTML будет сохранён отдельно для этого клиента.';
-  try{const category=lead.categoryKey||lead.categoryId||$('category').value;const source=cfg.templateHTML||getTemplate(category);const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial,source);$('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||$('siteHTML').value;$('siteHTML').dataset.templateHTML=source||'';$('siteHTML').dataset.appliedName=$('siteName').value;$('siteHTML').dataset.appliedTitle=$('siteTitle').value}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
+  $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Название сайта синхронизировано с полем компании.';
+  try{
+    const category=lead.categoryKey||lead.categoryId||$('category').value;
+    const source=cfg.templateHTML||getTemplate(category);
+    const initial={...lead,siteDraft:{...cfg,siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};
+    let html=cfg.customHTML||buildCustomizedHTML(initial,source);
+    // Reconcile legacy saved HTML with the current company name every time
+    // the editor opens; customHTML previously bypassed template substitution.
+    const oldNames=[originalName,cfg.previousAppliedName,cfg.publishedCompanyName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newName&&a.indexOf(x)===i);
+    oldNames.forEach(name=>{html=replaceHTMLText(html,name,newName);});
+    const oldTitles=[cfg.previousAppliedTitle,oldTitle,'Услуги компании '+originalName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
+    oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
+    $('siteHTML').value=html;
+    $('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||cfg.customHTML||html;
+    $('siteHTML').dataset.templateHTML=source||'';
+    // Keep the prior name as the replacement source for the first field edit.
+    $('siteHTML').dataset.appliedName=originalName||newName;
+    $('siteHTML').dataset.appliedTitle=oldTitle;
+  }catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
 }
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
