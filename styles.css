@@ -173,3 +173,20 @@ nav.workspace-nav{
 .publish-settings{margin-top:20px;padding:16px;border:1px solid #344b65;border-radius:14px;background:#0b1726;display:grid;gap:12px}
 .publish-settings h3{margin:0}.publish-settings .field{margin:0}.publish-result{margin-top:14px;padding:10px 12px;border-radius:10px;background:#102235;color:#dce9f7;overflow-wrap:anywhere}.publish-result a{color:#7ed8b0}
 @media(max-width:600px){.publish-settings{padding:13px}.editor-actions{display:flex;flex-direction:column}.editor-actions button{width:100%}}
+
+
+/* LeadScout 2.3 — mobile editor actions and visible save feedback */
+.modal-backdrop{z-index:60;align-items:flex-start;padding:16px 12px calc(16px + env(safe-area-inset-bottom))}
+.site-editor{max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:0;overscroll-behavior:contain}
+.editor-actions{position:sticky;bottom:0;z-index:2;padding:12px 0 calc(12px + env(safe-area-inset-bottom));margin:18px -2px 0;background:linear-gradient(180deg,rgba(16,30,45,.94),#101e2d 24%);border-top:1px solid #344b65}
+.editor-actions #siteSave{order:-1}
+.save-status{margin:12px 0 4px;padding:11px 13px;border:1px solid #3b705b;border-radius:10px;background:#102b25;color:#c5f3d5;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.toast{z-index:80;bottom:calc(88px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);text-align:center}
+@media(max-width:600px){
+ .modal-backdrop{z-index:60;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+ .site-editor{max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));margin:0 auto;padding:15px}
+ .editor-actions{gap:8px;padding:10px 0 calc(12px + env(safe-area-inset-bottom))}
+ .editor-actions button{min-height:46px}
+ .editor-actions #siteSave{order:-1}
+ .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+}
