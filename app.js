@@ -194,7 +194,7 @@ function openSiteEditor(id){
   const cfg=lead.siteDraft||{};
   const originalName=String(lead.name||'').trim();
   const newName=String(cfg.siteName||originalName).trim();
-  const oldTitle=String(cfg.title||newName||originalName).trim();
+  const oldTitle=String(cfg.title||newName||originalName).trim().replace(/^сайт\s+/i,'').replace(/^услуги компании\s+/i,'').trim();
   let newTitle=oldTitle;
   if(originalName&&newName&&originalName!==newName)newTitle=replaceHTMLText(newTitle,originalName,newName);
   $('siteEditor').hidden=false;
