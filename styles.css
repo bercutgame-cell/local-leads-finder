@@ -190,3 +190,7 @@ nav.workspace-nav{
  .editor-actions #siteSave{order:-1}
  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
 }
+
+
+/* LeadScout 2.4 — published client links */
+.published-link-row{display:block;margin-top:7px;overflow-wrap:anywhere}.published-link-row a{color:#8bc5ff;text-decoration:underline}.published-link-row .mini-btn{margin-left:6px}
