@@ -219,10 +219,10 @@ function openSiteEditor(id){
     oldNames.forEach(name=>{html=replaceHTMLText(html,name,newName);});
     const oldTitles=[cfg.previousAppliedTitle,oldTitle,'Услуги компании '+originalName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
     oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
-    html=replaceBrandFromMetadata(html,newName);
+    html=replaceBrandFromMetadata(html,newTitle||newName);
     $('siteHTML').value=html;
     let baseline=cfg.lastGeneratedHTML||cfg.customHTML||html;
-    baseline=replaceBrandFromMetadata(baseline,newName);
+    baseline=replaceBrandFromMetadata(baseline,newTitle||newName);
     $('siteHTML').dataset.generatedHTML=baseline;
     $('siteHTML').dataset.templateHTML=source||'';
     // Keep the prior name as the replacement source for the first field edit.
@@ -279,19 +279,24 @@ function replaceHTMLText(source,oldValue,newValue){
  return result;
 }
 function replaceBrandFromMetadata(source,companyName){
- const company=String(companyName||'').trim();
  let html=String(source||'');
+ const company=String(companyName||'').trim().replace(/^Услуги компании\s+/i,'').trim();
  if(!company)return html;
- // Read the old brand from the template's social title, then replace it
- // throughout the saved HTML (including title, description and visible copy).
- const tag=html.match(/<meta\b[^>]*property\s*=\s*["']og:title["'][^>]*>/i);
- if(!tag)return html;
- const content=tag[0].match(/\bcontent\s*=\s*["']([^"']+)["']/i);
- if(!content)return html;
- const oldBrand=(content[1].split(/\s+[—–-]\s+/)[0]||'').trim();
- if(!oldBrand||oldBrand.length>80||oldBrand.toLowerCase()===company.toLowerCase())return html;
- html=replaceHTMLText(html,oldBrand,company);
- return html;
+ // Parse og:title independent of attribute order and replace its brand in all HTML.
+ const tags=html.match(/<meta\b[^>]*>/gi)||[];
+ let oldBrand='';
+ for(const tag of tags){
+  if(!/\bproperty\s*=\s*["']og:title["']/i.test(tag))continue;
+  const content=tag.match(/\bcontent\s*=\s*(["'])(.*?)\1/i);
+  if(content){oldBrand=(content[2].split(/\s+[—–-]\s+/)[0]||'').trim();break;}
+ }
+ // Fallback: identify the brand from the document title if OG metadata is absent.
+ if(!oldBrand){
+  const title=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  if(title)oldBrand=(title[1].split(/\s+[—–-]\s+/)[0]||'').trim();
+ }
+ if(!oldBrand||oldBrand.length>100||oldBrand.toLowerCase()===company.toLowerCase())return html;
+ return replaceHTMLText(html,oldBrand,company);
 }
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
@@ -308,7 +313,7 @@ function buildCustomizedHTML(lead,sourceTemplate){
  if(previousName&&company&&previousName!==company)result=replaceHTMLText(result,previousName,company);
  if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
  if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
- result=replaceBrandFromMetadata(result,company);
+ result=replaceBrandFromMetadata(result,title||company);
  return result;
 }
 function syncSiteFieldsToHTML(){
