@@ -208,10 +208,13 @@ function openSiteEditor(id){
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
   const id=$('siteLeadId').value;
+  if(!id){$('siteSaveStatus').textContent='Не удалось сохранить: не выбрана компания.';return false;}
   let lead=state.saved.find(x=>x.id===id);
-  if(!lead){const found=state.results.find(x=>x.id===id);if(!found)return;lead={...found};state.saved.unshift(lead);}
+  if(!lead){const found=state.results.find(x=>x.id===id);if(!found){$('siteSaveStatus').textContent='Не удалось сохранить: компания не найдена в текущей базе.';return false;}lead={...found};state.saved.unshift(lead);}
   lead.siteDraft={...(lead.siteDraft||{}),siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim(),templateHTML:$('siteHTML').dataset.templateHTML||'',lastGeneratedHTML:$('siteHTML').dataset.generatedHTML||'',customHTML:$('siteHTML').value};
-  persist();renderResults();renderSaved();toast('Данные сайта сохранены отдельно для этой компании');
+  persist();renderResults();renderSaved();
+  const message='Сайт сохранён для компании «'+lead.name+'». HTML и данные записаны в локальную базу этого браузера.';
+  $('siteSaveStatus').textContent=message;$('siteNotice').textContent=message;toast('Сайт сохранён');return true;
 }
 function getTemplate(category){try{const all=JSON.parse(localStorage.getItem('leadscout_html_templates')||'{}');return all[category]||all.all||localStorage.getItem('leadscout_html_template')||''}catch{return ''}}
 function setTemplate(html,name,category){
