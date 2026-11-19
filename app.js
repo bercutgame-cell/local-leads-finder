@@ -219,8 +219,11 @@ function openSiteEditor(id){
     oldNames.forEach(name=>{html=replaceHTMLText(html,name,newName);});
     const oldTitles=[cfg.previousAppliedTitle,oldTitle,'Услуги компании '+originalName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
     oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
+    html=replaceBrandFromMetadata(html,newName);
     $('siteHTML').value=html;
-    $('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||cfg.customHTML||html;
+    let baseline=cfg.lastGeneratedHTML||cfg.customHTML||html;
+    baseline=replaceBrandFromMetadata(baseline,newName);
+    $('siteHTML').dataset.generatedHTML=baseline;
     $('siteHTML').dataset.templateHTML=source||'';
     // Keep the prior name as the replacement source for the first field edit.
     $('siteHTML').dataset.appliedName=originalName||newName;
@@ -275,6 +278,19 @@ function replaceHTMLText(source,oldValue,newValue){
  if(encodedOld!==oldText)result=replaceCI(result,encodedOld,esc(nextText));
  return result;
 }
+function replaceBrandFromMetadata(source,companyName){
+ const company=String(companyName||'').trim();
+ let html=String(source||'');
+ if(!company)return html;
+ // Use the old brand explicitly stated in the template's Open Graph title.
+ const tag=html.match(/<meta\\b[^>]*property\\s*=\\s*["']og:title["'][^>]*>/i);
+ if(!tag)return html;
+ const content=tag[0].match(/\\bcontent\\s*=\\s*["']([^"']+)["']/i);
+ if(!content)return html;
+ const brand=(content[1].split(/\\s+[—–-]\\s+/)[0]||'').trim();
+ if(!brand||brand.length>60||brand.toLowerCase()===company.toLowerCase())return html;
+ return replaceHTMLText(html,brand,company);
+}
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
@@ -290,6 +306,7 @@ function buildCustomizedHTML(lead,sourceTemplate){
  if(previousName&&company&&previousName!==company)result=replaceHTMLText(result,previousName,company);
  if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
  if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
+ result=replaceBrandFromMetadata(result,company);
  return result;
 }
 function syncSiteFieldsToHTML(){
@@ -320,6 +337,7 @@ function syncSiteFieldsToHTML(){
    const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
    Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
   }
+  generated=replaceBrandFromMetadata(generated,newName);
   html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;
   $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
