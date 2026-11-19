@@ -283,6 +283,21 @@ function replaceHTMLText(source,oldValue,newValue){
  if(encodedOld!==oldText)result=replaceCI(result,encodedOld,esc(nextText));
  return result;
 }
+function applyPrimarySiteHeading(source,heading){
+ let html=String(source||'');
+ const text=String(heading||'').trim();
+ if(!text)return html;
+ const safe=esc(text);
+ html=html.replace(/(<h1\b[^>]*>)[\s\S]*?(<\/h1\s*>)/i,(_,open,close)=>open+safe+close);
+ if(/<title\b[^>]*>[\s\S]*?<\/title>/i.test(html)){
+  html=html.replace(/(<title\b[^>]*>)[\s\S]*?(<\/title\s*>)/i,(_,open,close)=>open+safe+close);
+ }
+ html=html.replace(/<meta\b(?=[^>]*\bproperty\s*=\s*["']og:title["'])[^>]*>/i,tag=>{
+  if(/\bcontent\s*=\s*["'][^"']*["']/i.test(tag))return tag.replace(/(\bcontent\s*=\s*["'])[^"']*(["'])/i,'$1'+safe+'$2');
+  return tag.replace(/\s*\/?>$/,' content="'+safe+'">');
+ });
+ return html;
+}
 function replaceBrandFromMetadata(source,companyName){
  let html=String(source||'');
  const company=String(companyName||'').trim().replace(/^Услуги компании\s+/i,'').trim();
@@ -327,6 +342,7 @@ function buildCustomizedHTML(lead,sourceTemplate){
  if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
  if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
  result=replaceBrandFromMetadata(result,title||company);
+ result=applyPrimarySiteHeading(result,title||company);
  return result;
 }
 function syncSiteFieldsToHTML(){
@@ -361,6 +377,7 @@ function syncSiteFieldsToHTML(){
   const nextFields={siteName:newName,title:newTitle,phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,services:draft.services,button:draft.button};
   generated=replaceSavedSiteFields(generated,previousFields,nextFields);
   generated=replaceBrandFromMetadata(generated,newTitle||newName);
+  generated=applyPrimarySiteHeading(generated,newTitle||newName);
   html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;html.dataset.appliedFields=JSON.stringify(nextFields);
   $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
