@@ -194,7 +194,7 @@ function openSiteEditor(id){
   const cfg=lead.siteDraft||{};
   $('siteEditor').hidden=false;
   $('siteLeadId').value=id;
-  $('siteName').value=cfg.siteName||('Сайт '+lead.name);
+  $('siteName').value=cfg.siteName||lead.name;
   $('siteTitle').value=cfg.title||('Услуги компании '+lead.name);
   $('sitePhone').value=cfg.phone??lead.phone??'';
   $('siteEmail').value=cfg.email??lead.email??'';
@@ -262,6 +262,7 @@ function syncSiteFieldsToHTML(){
   else{
    generated=current;
    if(oldName&&newName&&oldName!==newName)generated=generated.split(oldName).join(esc(newName));
+   if(lead.name&&newName&&lead.name!==newName)generated=generated.split(String(lead.name)).join(esc(newName));
    if(oldTitle&&newTitle&&oldTitle!==newTitle)generated=generated.split(oldTitle).join(esc(newTitle));
    const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
    Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
