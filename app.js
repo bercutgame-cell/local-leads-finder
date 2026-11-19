@@ -221,7 +221,7 @@ function openSiteEditor(id){
     oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
     html=applyBrandIdentity(html,newName);
     html=replaceBrandFromMetadata(html,newTitle||newName);
-    html=applyPrimarySiteHeading(html,newTitle||newName);
+    html=applyPrimarySiteHeading(html,newName);
     $('siteHTML').value=html;
     let baseline=cfg.lastGeneratedHTML||cfg.customHTML||html;
     baseline=replaceBrandFromMetadata(baseline,newTitle||newName);
@@ -308,14 +308,15 @@ function applyBrandIdentity(source,brandName){
  let html=String(source||'');
  const brand=String(brandName||'').trim().replace(/^сайт\s+/i,'').replace(/^услуги компании\s+/i,'').trim();
  if(!brand)return html;
- html=replaceHTMLText(html,'ГРАФИТ',brand);
- html=replaceHTMLText(html,'GRAFIT',brand);
- html=html.replace(/(<a\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*>)[\s\S]*?(<\/a>)/i,(_,open,close)=>{
-  const parts=brand.split(/\s+/).filter(Boolean);
-  const mark=parts.length>1?esc(parts[0])+' <b>'+esc(parts.slice(1).join(' '))+'</b>':esc(brand);
-  const reg='<span class="reg">® 2026</span>';
-  return open+mark+reg+close;
+ const parts=brand.split(/\s+/).filter(Boolean);
+ const logoText=parts.length>1?esc(parts[0])+' <b>'+esc(parts.slice(1).join(' '))+'</b>':esc(brand);
+ const logoMarkup=logoText+'<span class="reg">® 2026</span>';
+ html=html.replace(/(<a\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*)(>[\s\S]*?<\/a>)/i,(_,open)=>{
+  open=open.replace(/\s+aria-label\s*=\s*(["'])[^"']*\1/i,'');
+  return open+' aria-label="'+esc(brand)+' — на главную">'+logoMarkup+'</a>';
  });
+ html=html.replace(/(<(?:div|span)\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*>)[\s\S]*?(<\/(?:div|span)>)/i,(_,open,close)=>open+logoMarkup+close);
+ html=html.replace(/(<[^>]*class\s*=\s*["'][^"']*\bpl-logo\b[^"']*["'][^>]*>)[\s\S]*?(<\/[^>]+>)/i,(_,open,close)=>open+logoMarkup+close);
  return html;
 }
 function replaceBrandFromMetadata(source,companyName){
@@ -363,7 +364,7 @@ function buildCustomizedHTML(lead,sourceTemplate){
  if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
  result=applyBrandIdentity(result,company);
  result=replaceBrandFromMetadata(result,title||company);
- result=applyPrimarySiteHeading(result,title||company);
+ result=applyPrimarySiteHeading(result,company);
  return result;
 }
 function syncSiteFieldsToHTML(){
