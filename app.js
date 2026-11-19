@@ -237,18 +237,30 @@ function showWorkspace(id){
 }
 document.querySelectorAll('.workspace-tab').forEach(v=>v.addEventListener('click',()=>showWorkspace(v.dataset.view)));
 function replaceHTMLText(source,oldValue,newValue){
- const oldText=String(oldValue||''),nextText=String(newValue||'');
+ const oldText=String(oldValue||'').trim(),nextText=String(newValue||'').trim();
  if(!oldText||!nextText||oldText===nextText)return source;
- const variants=[oldText,esc(oldText)];
- let result=source;
- for(const value of variants)result=result.split(value).join(esc(nextText));
+ const replaceCI=(input,needle,replacement)=>{
+  let rest=String(input),out='',lowerNeedle=needle.toLowerCase(),at;
+  while((at=rest.toLowerCase().indexOf(lowerNeedle))!==-1){
+   out+=rest.slice(0,at)+replacement;
+   rest=rest.slice(at+needle.length);
+  }
+  return out+rest;
+ };
+ let result=String(source);
+ result=replaceCI(result,oldText,esc(nextText));
+ const encodedOld=esc(oldText);
+ if(encodedOld!==oldText)result=replaceCI(result,encodedOld,esc(nextText));
  return result;
 }
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
  const services=String(d.services||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
- const company=String(d.siteName||lead.name||'').trim(),title=String(d.title||company||lead.name||'').trim();
+ const company=String(d.siteName||lead.name||'').trim();
+ let title=String(d.title||company||lead.name||'').trim();
+ const priorName=String(d.previousAppliedName||lead.name||'').trim();
+ if(priorName&&company&&priorName!==company)title=replaceHTMLText(title,priorName,company);
  const values={company_name:company,title,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
  let result=template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
  const previousName=String(d.previousAppliedName||d.siteName||lead.name||'').trim();
@@ -263,7 +275,14 @@ function syncSiteFieldsToHTML(){
  const lead=siteLead($('siteLeadId').value);if(!lead)return;
  const current=html.value,baseline=html.dataset.generatedHTML||'';
  const oldName=html.dataset.appliedName||lead.name||'',newName=$('siteName').value.trim();
- const oldTitle=html.dataset.appliedTitle||'',newTitle=$('siteTitle').value.trim();
+ const oldTitle=html.dataset.appliedTitle||'';
+ let newTitle=$('siteTitle').value.trim();
+ // The default hero title contains the original business name. Update that
+ // name too, otherwise the page keeps showing the previous company.
+ if(oldName&&newName&&oldName!==newName&&newTitle.toLowerCase().includes(oldName.toLowerCase())){
+  newTitle=replaceHTMLText(newTitle,oldName,newName);
+  $('siteTitle').value=newTitle;
+ }
  const draft={...(lead.siteDraft||{}),siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
  try{
   let generated;
