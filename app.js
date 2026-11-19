@@ -190,53 +190,41 @@ function siteLead(id){
   return state.saved.find(x=>x.id===id)||state.results.find(x=>x.id===id);
 }
 function openSiteEditor(id){
-  const lead=siteLead(id);if(!lead)return;
-  const cfg=lead.siteDraft||{};
-  const originalName=String(lead.name||'').trim();
-  const newName=String(cfg.siteName||originalName).trim();
-  const oldTitle=String(cfg.title||newName||originalName).trim().replace(/^сайт\s+/i,'').replace(/^услуги компании\s+/i,'').trim();
-  let newTitle=oldTitle;
-  if(originalName&&newName&&originalName!==newName)newTitle=replaceHTMLText(newTitle,originalName,newName);
-  $('siteEditor').hidden=false;
-  $('siteLeadId').value=id;
-  $('siteName').value=newName;
-  $('siteTitle').value=newTitle;
-  $('sitePhone').value=cfg.phone??lead.phone??'';
-  $('siteEmail').value=cfg.email??lead.email??'';
-  $('siteAddress').value=cfg.address??lead.address??'';
-  $('siteDescription').value=cfg.description||('Расскажите о компании '+newName+', её преимуществах и услугах.');
-  $('siteServices').value=cfg.services||'Консультация — уточнить цену\\nОсновная услуга — уточнить цену';
-  $('siteButton').value=cfg.button||'Оставить заявку';
-  $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Название сайта синхронизировано с полем компании.';
-  try{
-    const category=lead.categoryKey||lead.categoryId||$('category').value;
-    const source=cfg.templateHTML||getTemplate(category);
-    const initial={...lead,siteDraft:{...cfg,siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};
-    let html=cfg.customHTML||buildCustomizedHTML(initial,source);
-    // Reconcile legacy saved HTML with the current company name every time
-    // the editor opens; customHTML previously bypassed template substitution.
-    const oldNames=[originalName,cfg.previousAppliedName,cfg.publishedCompanyName].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newName&&a.indexOf(x)===i);
-    oldNames.forEach(name=>{html=replaceHTMLText(html,name,newName);});
-    const oldTitles=[cfg.previousAppliedTitle,oldTitle,(newName||originalName)].map(x=>String(x||'').trim()).filter((x,i,a)=>x&&x!==newTitle&&a.indexOf(x)===i);
-    oldTitles.forEach(title=>{html=replaceHTMLText(html,title,newTitle);});
-    html=applyBrandIdentity(html,newName);
-    html=replaceBrandFromMetadata(html,newTitle||newName);
-    html=applyPrimarySiteHeading(html,newName);
-    $('siteHTML').value=html;
-    let baseline=cfg.lastGeneratedHTML||cfg.customHTML||html;
-    baseline=replaceBrandFromMetadata(baseline,newTitle||newName);
-    $('siteHTML').dataset.generatedHTML=baseline;
-    $('siteHTML').dataset.templateHTML=source||'';
-    // Keep the prior name as the replacement source for the first field edit.
-    $('siteHTML').dataset.appliedName=originalName||newName;
-    $('siteHTML').dataset.appliedTitle=oldTitle;
-    $('siteHTML').dataset.appliedFields=JSON.stringify(cfg.appliedFields||{
-      siteName:cfg.siteName||originalName,title:cfg.title||(newName||originalName),
-      phone:cfg.phone??lead.phone??'',email:cfg.email??lead.email??'',address:cfg.address??lead.address??'',
-      description:cfg.description||'',services:cfg.services||'',button:cfg.button||'Оставить заявку'
-    });
-  }catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
+ const lead=siteLead(id);if(!lead)return;
+ const cfg=lead.siteDraft||{};
+ const originalName=String(lead.name||'').trim();
+ const newName=String(cfg.siteName||originalName).trim();
+ const newTitle=String(cfg.title||newName||originalName).trim();
+ $('siteEditor').hidden=false;
+ $('siteLeadId').value=id;
+ $('siteName').value=newName;
+ $('siteTitle').value=newTitle;
+ $('sitePhone').value=cfg.phone??lead.phone??'';
+ $('siteEmail').value=cfg.email??lead.email??'';
+ $('siteAddress').value=cfg.address??lead.address??'';
+ $('siteDescription').value=cfg.description||('Расскажите о компании '+newName+', её преимуществах и услугах.');
+ $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
+ $('siteButton').value=cfg.button||'Оставить заявку';
+ $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». HTML будет собран из исходного шаблона без старых подстановок.';
+ try{
+  const category=lead.categoryKey||lead.categoryId||$('category').value;
+  const source=cfg.templateHTML||getTemplate(category);
+  const initial={...lead,siteDraft:{...cfg,siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};
+  // Always rebuild from the saved source template when available. This clears
+  // the duplicated legacy customHTML while retaining the user's original template.
+  const generated=source?buildCustomizedHTML(initial,source):(cfg.customHTML||'');
+  $('siteHTML').value=generated;
+  $('siteHTML').dataset.generatedHTML=generated;
+  $('siteHTML').dataset.templateHTML=source||'';
+  $('siteHTML').dataset.appliedName=newName;
+  $('siteHTML').dataset.appliedTitle=newTitle;
+  $('siteHTML').dataset.appliedFields=JSON.stringify(cfg.appliedFields||{
+   siteName:newName,title:newTitle,phone:cfg.phone??lead.phone??'',email:cfg.email??lead.email??'',address:cfg.address??lead.address??'',
+   description:cfg.description||'',services:cfg.services||'',button:cfg.button||'Оставить заявку'
+  });
+ }catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message;}
 }
+
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
   const id=$('siteLeadId').value;
@@ -311,17 +299,19 @@ function applyBrandIdentity(source,brandName){
  const parts=brand.split(/\s+/).filter(Boolean);
  const logoText=parts.length>1?esc(parts[0])+' <b>'+esc(parts.slice(1).join(' '))+'</b>':esc(brand);
  const logoMarkup=logoText+'<span class="reg">® 2026</span>';
- html=html.replace(/(<a\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*)(>[\s\S]*?<\/a>)/i,(_,open)=>{
+ // Main header: replace the entire anchor contents exactly once.
+ html=html.replace(/(<a\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*)(>)[\s\S]*?<\/a>/i,(_,open,close)=>{
   open=open.replace(/\s+aria-label\s*=\s*(["'])[^"']*\1/i,'');
   return open+' aria-label="'+esc(brand)+' — на главную">'+logoMarkup+'</a>';
  });
- html=html.replace(/(<(?:div|span)\b(?=[^>]*\bclass\s*=\s*["'][^"']*\blogo\b[^"']*["'])[^>]*>)[\s\S]*?(<\/(?:div|span)>)/i,(_,open,close)=>open+logoMarkup+close);
- html=html.replace(/(<[^>]*class\s*=\s*["'][^"']*\bpl-logo\b[^"']*["'][^>]*>)[\s\S]*?(<\/[^>]+>)/i,(_,open,close)=>open+logoMarkup+close);
+ // Preloader has a separate mark. Do not add the ®/year suffix there.
+ html=html.replace(/(<div\b(?=[^>]*\bclass\s*=\s*["'][^"']*\bpl-logo\b[^"']*["'])[^>]*>)[\s\S]*?<\/div>/i,(_,open)=>open+logoText+'</div>');
  return html;
 }
+
 function replaceBrandFromMetadata(source,companyName){
  let html=String(source||'');
- const company=String(companyName||'').trim().replace(/^Услуги компании\s+/i,'').trim();
+ const company=String(companyName||'').trim();
  if(!company)return html;
  const candidates=[];
  const tags=html.match(/<meta\b[^>]*>/gi)||[];
@@ -332,79 +322,71 @@ function replaceBrandFromMetadata(source,companyName){
  }
  const title=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
  if(title)candidates.push((title[1].split(/\s+[—–-]\s+/)[0]||'').trim());
- for(const oldBrand of [...new Set(candidates)]){
-  if(oldBrand&&oldBrand.length<=100&&oldBrand.toLowerCase()!==company.toLowerCase())html=replaceHTMLText(html,oldBrand,company);
+ const oldBrand=[...new Set(candidates)].find(x=>x&&x.length<=100&&x.toLowerCase()!==company.toLowerCase());
+ // Replace the former brand only inside the hero description. Never run a
+ // whole-document replacement: that corrupts unrelated copy and duplicates text.
+ if(oldBrand){
+  html=html.replace(/(<(?:p|div)\b(?=[^>]*\bclass\s*=\s*["'][^"']*\bhero-sub\b[^"']*["'])[^>]*>)([\s\S]*?)(<\/(?:p|div)>)/i,
+   (_,open,inner,close)=>open+replaceHTMLText(inner,oldBrand,company)+close);
  }
  return html;
 }
+
 function replaceSavedSiteFields(source,oldFields,newFields){
  let html=String(source||'');
- for(const key of ['siteName','title','phone','email','address','description','services','button']){
-  const before=String(oldFields?.[key]||'').trim(),after=String(newFields?.[key]||'').trim();
-  if(before&&after&&before!==after)html=replaceHTMLText(html,before,after);
- }
+ // Only fill explicit template placeholders. Replacing arbitrary prose globally
+ // made the previous version duplicate company names inside descriptions.
  const placeholders={company_name:newFields.siteName,title:newFields.title,phone:newFields.phone,email:newFields.email,address:newFields.address,description:newFields.description,services_text:newFields.services,button_text:newFields.button};
- for(const [key,value] of Object.entries(placeholders))html=html.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));
+ for(const [key,value] of Object.entries(placeholders)){
+  html=html.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));
+ }
  return html;
 }
+
 function buildCustomizedHTML(lead,sourceTemplate){
- const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
+ const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);
+ if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
  const services=String(d.services||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  const company=String(d.siteName||lead.name||'').trim();
- let title=String(d.title||company||lead.name||'').trim();
- const priorName=String(d.previousAppliedName||lead.name||'').trim();
- if(priorName&&company&&priorName!==company)title=replaceHTMLText(title,priorName,company);
+ const title=String(d.title||company||lead.name||'').trim();
  const values={company_name:company,title,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
  let result=template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
- const previousName=String(d.previousAppliedName||d.siteName||lead.name||'').trim();
- const previousTitle=String(d.previousAppliedTitle||d.title||'').trim();
- if(previousName&&company&&previousName!==company)result=replaceHTMLText(result,previousName,company);
- if(lead.name&&company&&lead.name!==company)result=replaceHTMLText(result,lead.name,company);
- if(previousTitle&&title&&previousTitle!==title)result=replaceHTMLText(result,previousTitle,title);
  result=applyBrandIdentity(result,company);
- result=replaceBrandFromMetadata(result,title||company);
+ result=replaceBrandFromMetadata(result,company);
  result=applyPrimarySiteHeading(result,company);
  return result;
 }
+
 function syncSiteFieldsToHTML(){
  const html=$('siteHTML');if(!html||!$('siteLeadId').value)return;
  const lead=siteLead($('siteLeadId').value);if(!lead)return;
  const current=html.value,baseline=html.dataset.generatedHTML||'';
- const oldName=html.dataset.appliedName||lead.name||'',newName=$('siteName').value.trim();
- const oldTitle=html.dataset.appliedTitle||'';
- let newTitle=$('siteTitle').value.trim();
- // The default hero title contains the original business name. Update that
- // name too, otherwise the page keeps showing the previous company.
- if(oldName&&newName&&oldName!==newName&&newTitle.toLowerCase().includes(oldName.toLowerCase())){
-  newTitle=replaceHTMLText(newTitle,oldName,newName);
-  $('siteTitle').value=newTitle;
- }
+ const newName=$('siteName').value.trim(),newTitle=$('siteTitle').value.trim();
  const draft={...(lead.siteDraft||{}),siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
  try{
   let generated;
   if(current===baseline){
    generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);
-   html.dataset.generatedHTML=generated;
   }else{
-   // Manual HTML edits are preserved. Keep the original baseline unchanged so
-   // subsequent field edits do not mistakenly rebuild from the template.
-   generated=replaceHTMLText(current,oldName,newName);
-   generated=replaceHTMLText(generated,lead.name,newName);
-   generated=replaceHTMLText(generated,oldTitle,newTitle);
-   const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
-   Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
+   // Preserve manual edits, but never perform broad old-name/title replacements.
+   generated=current;
+   const replacements={company_name:newName,title:newTitle,phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
+   for(const [key,value] of Object.entries(replacements))generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));
+   generated=applyBrandIdentity(generated,newName);
+   generated=replaceBrandFromMetadata(generated,newName);
+   generated=applyPrimarySiteHeading(generated,newName);
   }
-  let previousFields={};try{previousFields=JSON.parse(html.dataset.appliedFields||'{}')}catch{}
   const nextFields={siteName:newName,title:newTitle,phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,services:draft.services,button:draft.button};
-  generated=replaceSavedSiteFields(generated,previousFields,nextFields);
-  generated=applyBrandIdentity(generated,newName);
-  generated=replaceBrandFromMetadata(generated,newTitle||newName);
-  generated=applyPrimarySiteHeading(generated,newName);
-  html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;html.dataset.appliedFields=JSON.stringify(nextFields);
-  $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
+  html.value=generated;
+  html.dataset.generatedHTML=generated;
+  html.dataset.appliedName=newName;
+  html.dataset.appliedTitle=newTitle;
+  html.dataset.appliedFields=JSON.stringify(nextFields);
+  $('siteNotice').textContent='Данные компании обновлены без массовой замены текста. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
 }
+
 function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:localStorage.getItem('leadscout_publish_password')||sessionStorage.getItem('leadscout_publish_password')||''};}
 function savePublishSettings(){
  let url=$('publishWorkerUrl').value.trim();
