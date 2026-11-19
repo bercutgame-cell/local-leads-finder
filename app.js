@@ -158,7 +158,7 @@ function renderResults(){
 function saveLead(id){const lead=state.results.find(x=>x.id===id);if(!lead)return;if(state.saved.some(x=>x.id===id)){toast('Уже есть в базе');return}state.saved.unshift({...lead});persist();renderResults();toast('Компания сохранена в твоей базе')}
 function renderSaved(){
  $('savedCount').textContent=state.saved.length;
- $('savedLeads').innerHTML=state.saved.length?state.saved.map(x=>'<div class="saved-row"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.address)+' · '+(x.website?'Сайт указан':'Сайт не указан')+' · '+esc(x.status||'Новый')+'</small></div><div><button class="mini-btn" data-site="'+esc(x.id)+'">Сайт / изменить</button> <button class="mini-btn" data-outreach="'+esc(x.id)+'">Связаться</button> <button class="mini-btn" data-remove="'+esc(x.id)+'">Удалить</button></div></div>').join(''):'<p class="muted">Пока ничего не сохранено.</p>';
+ $('savedLeads').innerHTML=state.saved.length?state.saved.map(x=>'<div class="saved-row"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.address)+' · '+(x.website?'Сайт указан':'Сайт не указан')+' · '+esc(x.status||'Новый')+'</small>'+(x.siteDraft?.publishedUrl?'<small class="published-link-row">Сайт клиента: <a href="'+esc(x.siteDraft.publishedUrl)+'" target="_blank" rel="noopener">Открыть опубликованный сайт ↗</a> <button class="mini-btn" data-copy-url="'+esc(x.siteDraft.publishedUrl)+'">Скопировать ссылку</button></small>':'')+'</div><div><button class="mini-btn" data-site="'+esc(x.id)+'">Сайт / изменить</button> <button class="mini-btn" data-outreach="'+esc(x.id)+'">Связаться</button> <button class="mini-btn" data-remove="'+esc(x.id)+'">Удалить</button></div></div>').join(''):'<p class="muted">Пока ничего не сохранено.</p>';
 }
 function openOutreach(id){
  const lead=state.saved.find(x=>x.id===id);if(!lead)return;
@@ -203,7 +203,7 @@ function openSiteEditor(id){
   $('siteServices').value=cfg.services||'Консультация — уточнить цену\nОсновная услуга — уточнить цену';
   $('siteButton').value=cfg.button||'Оставить заявку';
   $('siteNotice').textContent='Черновик привязан к компании «'+lead.name+'». Полный HTML будет сохранён отдельно для этого клиента.';
-  try{const category=lead.categoryKey||lead.categoryId||$('category').value;const source=cfg.templateHTML||getTemplate(category);const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial,source);$('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||$('siteHTML').value;$('siteHTML').dataset.templateHTML=source||''}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
+  try{const category=lead.categoryKey||lead.categoryId||$('category').value;const source=cfg.templateHTML||getTemplate(category);const initial={...lead,siteDraft:{...cfg,siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value}};$('siteHTML').value=cfg.customHTML||buildCustomizedHTML(initial,source);$('siteHTML').dataset.generatedHTML=cfg.lastGeneratedHTML||$('siteHTML').value;$('siteHTML').dataset.templateHTML=source||'';$('siteHTML').dataset.appliedName=$('siteName').value;$('siteHTML').dataset.appliedTitle=$('siteTitle').value}catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
 }
 function closeSiteEditor(){$('siteEditor').hidden=true}
 function saveSiteDraft(){
@@ -240,16 +240,35 @@ function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
  const d=lead.siteDraft||{};
  const services=String(d.services||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
- const values={company_name:d.siteName||lead.name,title:d.title||lead.name,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
- return template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
+ const company=String(d.siteName||lead.name||'').trim(),title=String(d.title||company||lead.name||'').trim();
+ const values={company_name:company,title,phone:d.phone||lead.phone||'',email:d.email||lead.email||'',address:d.address||lead.address||'',website:lead.website||'',description:d.description||'',button_text:d.button||'Оставить заявку',services_text:services.join('\n'),services_html:services.map(x=>'<li>'+esc(x)+'</li>').join('')};
+ let result=template.replace(/\{\{([a-z_]+)\}\}/gi,(match,key)=>Object.prototype.hasOwnProperty.call(values,key)?(key==='services_html'?values[key]:esc(values[key])):match);
+ // Also replace a hard-coded original business name in templates that do not use placeholders.
+ if(lead.name&&company&&lead.name!==company)result=result.split(String(lead.name)).join(esc(company));
+ const previousTitle=String((lead.siteDraft||{}).previousAppliedTitle||'').trim();
+ if(previousTitle&&title&&previousTitle!==title)result=result.split(previousTitle).join(esc(title));
+ return result;
 }
 function syncSiteFieldsToHTML(){
  const html=$('siteHTML');if(!html||!$('siteLeadId').value)return;
- const current=html.value,baseline=html.dataset.generatedHTML||'';
- if(current!==baseline){$('siteNotice').textContent='HTML изменён вручную. Чтобы применить поля формы, нажми «Заново подставить данные в шаблон» — ручные изменения кода при этом заменятся шаблоном.';return;}
  const lead=siteLead($('siteLeadId').value);if(!lead)return;
- const draft={...(lead.siteDraft||{}),siteName:$('siteName').value,title:$('siteTitle').value,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
- try{const generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);html.value=generated;html.dataset.generatedHTML=generated;$('siteNotice').textContent='Данные автоматически применены к HTML. Сохрани сайт, чтобы зафиксировать изменения.';}catch(e){$('siteNotice').textContent=e.message;}
+ const current=html.value,baseline=html.dataset.generatedHTML||'';
+ const oldName=html.dataset.appliedName||lead.name||'',newName=$('siteName').value.trim();
+ const oldTitle=html.dataset.appliedTitle||'',newTitle=$('siteTitle').value.trim();
+ const draft={...(lead.siteDraft||{}),siteName:newName,title:newTitle,phone:$('sitePhone').value,email:$('siteEmail').value,address:$('siteAddress').value,description:$('siteDescription').value,services:$('siteServices').value,button:$('siteButton').value};
+ try{
+  let generated;
+  if(current===baseline){generated=buildCustomizedHTML({...lead,siteDraft:draft},html.dataset.templateHTML);}
+  else{
+   generated=current;
+   if(oldName&&newName&&oldName!==newName)generated=generated.split(oldName).join(esc(newName));
+   if(oldTitle&&newTitle&&oldTitle!==newTitle)generated=generated.split(oldTitle).join(esc(newTitle));
+   const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
+   Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
+  }
+  html.value=generated;html.dataset.generatedHTML=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;
+  $('siteNotice').textContent='Название и данные применены к HTML. Ручная разметка сохранена. Сохрани сайт перед публикацией.';
+ }catch(e){$('siteNotice').textContent=e.message;}
 }
 function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:sessionStorage.getItem('leadscout_publish_password')||''};}
 function savePublishSettings(){
@@ -265,16 +284,16 @@ function savePublishSettings(){
 }
 async function publishSite(){
  saveSiteDraft();
- const id=$('siteLeadId').value,lead=siteLead(id),html=$('siteHTML').value.trim(),cfg=publishConfig();
+ const id=$('siteLeadId').value,lead=siteLead(id),html=$('siteHTML').value.trim(),cfg=publishConfig(),publishName=$('siteName').value.trim();
  if(!lead||!html){toast('Сначала подготовь HTML сайта');return}
  if(!cfg.url||!cfg.password){toast('Укажи адрес Worker и пароль публикации');return}
  const btn=$('sitePublish');btn.disabled=true;btn.textContent='Публикуем…';
  $('publishResult').textContent='Отправляем сайт на защищённый сервер публикации…';
  try{
-  const response=await fetch(cfg.url+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:lead.name,html})});
+  const response=await fetch(cfg.url+'/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.password},body:JSON.stringify({leadId:id,companyName:publishName||lead.name,html})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok)throw new Error(data.error||('Ошибка публикации HTTP '+response.status));
-  const saved=state.saved.find(x=>x.id===id);if(saved){saved.siteDraft={...(saved.siteDraft||{}),publishedUrl:data.url,publishedAt:new Date().toISOString(),publishedPath:data.path};persist();}
+  const saved=state.saved.find(x=>x.id===id);if(saved){saved.siteDraft={...(saved.siteDraft||{}),publishedUrl:data.url,publishedAt:new Date().toISOString(),publishedPath:data.path,publishedCompanyName:publishName||lead.name};persist();renderSaved();}
   $('publishResult').innerHTML='Сайт опубликован: <a href="'+esc(data.url)+'" target="_blank" rel="noopener">'+esc(data.url)+'</a>';
   toast('Сайт опубликован. Ссылка готова.');
  }catch(error){$('publishResult').textContent='Не удалось опубликовать: '+(error.message||'ошибка соединения');}
@@ -296,6 +315,7 @@ function regenerateSiteHTML(){const id=$('siteLeadId').value,lead=siteLead(id);i
 
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.copyUrl){navigator.clipboard?.writeText(b.dataset.copyUrl).then(()=>toast('Ссылка скопирована')).catch(()=>toast('Не удалось скопировать — открой ссылку и скопируй адрес вручную'));}
  if(b.dataset.save)saveLead(b.dataset.save);
  if(b.dataset.contact){
   const id=b.dataset.contact;
