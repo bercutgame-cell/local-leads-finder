@@ -228,6 +228,11 @@ function openSiteEditor(id){
     // Keep the prior name as the replacement source for the first field edit.
     $('siteHTML').dataset.appliedName=originalName||newName;
     $('siteHTML').dataset.appliedTitle=oldTitle;
+    $('siteHTML').dataset.appliedFields=JSON.stringify(cfg.appliedFields||{
+      siteName:cfg.siteName||originalName,title:cfg.title||('Услуги компании '+originalName),
+      phone:cfg.phone??lead.phone??'',email:cfg.email??lead.email??'',address:cfg.address??lead.address??'',
+      description:cfg.description||'',services:cfg.services||'',button:cfg.button||'Оставить заявку'
+    });
   }catch(e){$('siteHTML').value='';$('siteNotice').textContent=e.message}
 }
 function closeSiteEditor(){$('siteEditor').hidden=true}
@@ -236,7 +241,7 @@ function saveSiteDraft(){
   if(!id){$('siteSaveStatus').textContent='Не удалось сохранить: не выбрана компания.';return false;}
   let lead=state.saved.find(x=>x.id===id);
   if(!lead){const found=state.results.find(x=>x.id===id);if(!found){$('siteSaveStatus').textContent='Не удалось сохранить: компания не найдена в текущей базе.';return false;}lead={...found};state.saved.unshift(lead);}
-  lead.siteDraft={...(lead.siteDraft||{}),siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim(),templateHTML:$('siteHTML').dataset.templateHTML||'',lastGeneratedHTML:$('siteHTML').dataset.generatedHTML||'',customHTML:$('siteHTML').value};
+  lead.siteDraft={...(lead.siteDraft||{}),siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim(),appliedFields:{siteName:$('siteName').value.trim(),title:$('siteTitle').value.trim(),phone:$('sitePhone').value.trim(),email:$('siteEmail').value.trim(),address:$('siteAddress').value.trim(),description:$('siteDescription').value.trim(),services:$('siteServices').value.trim(),button:$('siteButton').value.trim()},templateHTML:$('siteHTML').dataset.templateHTML||'',lastGeneratedHTML:$('siteHTML').dataset.generatedHTML||'',customHTML:$('siteHTML').value};
   persist();renderResults();renderSaved();
   const message='Сайт сохранён для компании «'+lead.name+'». HTML и данные записаны в локальную базу этого браузера.';
   $('siteSaveStatus').textContent=message;$('siteNotice').textContent=message;toast('Сайт сохранён');return true;
@@ -282,21 +287,29 @@ function replaceBrandFromMetadata(source,companyName){
  let html=String(source||'');
  const company=String(companyName||'').trim().replace(/^Услуги компании\s+/i,'').trim();
  if(!company)return html;
- // Parse og:title independent of attribute order and replace its brand in all HTML.
+ const candidates=[];
  const tags=html.match(/<meta\b[^>]*>/gi)||[];
- let oldBrand='';
  for(const tag of tags){
   if(!/\bproperty\s*=\s*["']og:title["']/i.test(tag))continue;
   const content=tag.match(/\bcontent\s*=\s*(["'])(.*?)\1/i);
-  if(content){oldBrand=(content[2].split(/\s+[—–-]\s+/)[0]||'').trim();break;}
+  if(content)candidates.push((content[2].split(/\s+[—–-]\s+/)[0]||'').trim());
  }
- // Fallback: identify the brand from the document title if OG metadata is absent.
- if(!oldBrand){
-  const title=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
-  if(title)oldBrand=(title[1].split(/\s+[—–-]\s+/)[0]||'').trim();
+ const title=html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+ if(title)candidates.push((title[1].split(/\s+[—–-]\s+/)[0]||'').trim());
+ for(const oldBrand of [...new Set(candidates)]){
+  if(oldBrand&&oldBrand.length<=100&&oldBrand.toLowerCase()!==company.toLowerCase())html=replaceHTMLText(html,oldBrand,company);
  }
- if(!oldBrand||oldBrand.length>100||oldBrand.toLowerCase()===company.toLowerCase())return html;
- return replaceHTMLText(html,oldBrand,company);
+ return html;
+}
+function replaceSavedSiteFields(source,oldFields,newFields){
+ let html=String(source||'');
+ for(const key of ['siteName','title','phone','email','address','description','services','button']){
+  const before=String(oldFields?.[key]||'').trim(),after=String(newFields?.[key]||'').trim();
+  if(before&&after&&before!==after)html=replaceHTMLText(html,before,after);
+ }
+ const placeholders={company_name:newFields.siteName,title:newFields.title,phone:newFields.phone,email:newFields.email,address:newFields.address,description:newFields.description,services_text:newFields.services,button_text:newFields.button};
+ for(const [key,value] of Object.entries(placeholders))html=html.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));
+ return html;
 }
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
@@ -344,8 +357,11 @@ function syncSiteFieldsToHTML(){
    const replacements={phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,button_text:draft.button};
    Object.entries(replacements).forEach(([key,value])=>{generated=generated.replace(new RegExp('\\{\\{'+key+'\\}\\}','gi'),esc(value||''));});
   }
-  generated=replaceBrandFromMetadata(generated,newName);
-  html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;
+  let previousFields={};try{previousFields=JSON.parse(html.dataset.appliedFields||'{}')}catch{}
+  const nextFields={siteName:newName,title:newTitle,phone:draft.phone,email:draft.email,address:draft.address,description:draft.description,services:draft.services,button:draft.button};
+  generated=replaceSavedSiteFields(generated,previousFields,nextFields);
+  generated=replaceBrandFromMetadata(generated,newTitle||newName);
+  html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;html.dataset.appliedFields=JSON.stringify(nextFields);
   $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
 }
@@ -443,7 +459,7 @@ $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name,$('templateCategory').value);toast('HTML-шаблон загружен для выбранной категории')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
-const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;const legacyPublishPassword=sessionStorage.getItem('leadscout_publish_password')||'';if(legacyPublishPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',legacyPublishPassword);sessionStorage.removeItem('leadscout_publish_password');if($('publishSettingsStatus'))$('publishSettingsStatus').textContent=savedPublishUrl?(localStorage.getItem('leadscout_publish_password')?'Адрес и пароль сохранены на этом устройстве. Повторный ввод не требуется.':'Адрес сохранён. Добавь пароль Worker один раз.'):'Сервер публикации пока не подключён.';
+const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;const legacyPublishPassword=sessionStorage.getItem('leadscout_publish_password')||'';if(legacyPublishPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',legacyPublishPassword);sessionStorage.removeItem('leadscout_publish_password');const savedPublishPassword=localStorage.getItem('leadscout_publish_password')||'';if($('publishPassword'))$('publishPassword').value=savedPublishPassword;if($('publishSettingsStatus'))$('publishSettingsStatus').textContent=savedPublishUrl?(savedPublishPassword?'Адрес и пароль сохранены на этом устройстве. Пароль уже подставлен автоматически.':'Адрес сохранён. Добавь пароль Worker один раз.'):'Сервер публикации пока не подключён.';
 renderTemplateInfo();
 renderSaved();
 showWorkspace('searchView');
