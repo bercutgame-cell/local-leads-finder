@@ -400,7 +400,7 @@ function syncSiteFieldsToHTML(){
   generated=replaceSavedSiteFields(generated,previousFields,nextFields);
   generated=applyBrandIdentity(generated,newName);
   generated=replaceBrandFromMetadata(generated,newTitle||newName);
-  generated=applyPrimarySiteHeading(generated,newTitle||newName);
+  generated=applyPrimarySiteHeading(generated,newName);
   html.value=generated;html.dataset.appliedName=newName;html.dataset.appliedTitle=newTitle;html.dataset.appliedFields=JSON.stringify(nextFields);
   $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
