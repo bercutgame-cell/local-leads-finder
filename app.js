@@ -282,14 +282,16 @@ function replaceBrandFromMetadata(source,companyName){
  const company=String(companyName||'').trim();
  let html=String(source||'');
  if(!company)return html;
- // Use the old brand explicitly stated in the template's Open Graph title.
- const tag=html.match(/<meta\\b[^>]*property\\s*=\\s*["']og:title["'][^>]*>/i);
+ // Read the old brand from the template's social title, then replace it
+ // throughout the saved HTML (including title, description and visible copy).
+ const tag=html.match(/<meta\b[^>]*property\s*=\s*["']og:title["'][^>]*>/i);
  if(!tag)return html;
- const content=tag[0].match(/\\bcontent\\s*=\\s*["']([^"']+)["']/i);
+ const content=tag[0].match(/\bcontent\s*=\s*["']([^"']+)["']/i);
  if(!content)return html;
- const brand=(content[1].split(/\\s+[—–-]\\s+/)[0]||'').trim();
- if(!brand||brand.length>60||brand.toLowerCase()===company.toLowerCase())return html;
- return replaceHTMLText(html,brand,company);
+ const oldBrand=(content[1].split(/\s+[—–-]\s+/)[0]||'').trim();
+ if(!oldBrand||oldBrand.length>80||oldBrand.toLowerCase()===company.toLowerCase())return html;
+ html=replaceHTMLText(html,oldBrand,company);
+ return html;
 }
 function buildCustomizedHTML(lead,sourceTemplate){
  const template=sourceTemplate||getTemplate(lead.categoryKey||lead.categoryId||$('category').value);if(!template)throw new Error('Сначала загрузи HTML-шаблон для категории этого бизнеса или универсальный шаблон.');
@@ -342,14 +344,14 @@ function syncSiteFieldsToHTML(){
   $('siteNotice').textContent='Данные компании обновлены. Ручные изменения HTML сохранены. Нажми «Сохранить сайт», затем опубликуй его заново.';
  }catch(e){$('siteNotice').textContent=e.message;}
 }
-function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:sessionStorage.getItem('leadscout_publish_password')||''};}
+function publishConfig(){return {url:localStorage.getItem('leadscout_publish_url')||'',password:localStorage.getItem('leadscout_publish_password')||sessionStorage.getItem('leadscout_publish_password')||''};}
 function savePublishSettings(){
  let url=$('publishWorkerUrl').value.trim();
  while(url.endsWith('/'))url=url.slice(0,-1);
  const password=$('publishPassword').value;
  if(url&&!url.startsWith('https://')){toast('Адрес Worker должен начинаться с https://');return}
  if(url)localStorage.setItem('leadscout_publish_url',url);else localStorage.removeItem('leadscout_publish_url');
- if(password)sessionStorage.setItem('leadscout_publish_password',password);else sessionStorage.removeItem('leadscout_publish_password');
+ if(password)localStorage.setItem('leadscout_publish_password',password);else localStorage.removeItem('leadscout_publish_password');sessionStorage.removeItem('leadscout_publish_password');
  $('publishPassword').value='';
  $('publishSettingsStatus').textContent=url?'Адрес сохранён. Пароль действует только до закрытия вкладки.':'Адрес Worker не задан.';
  toast('Настройки публикации сохранены');
@@ -432,7 +434,7 @@ $('sitePreview').addEventListener('click',previewSiteDraft);
 $('regenerateSiteHTML').addEventListener('click',regenerateSiteHTML);
 $('templateCategory').addEventListener('change',renderTemplateInfo);
 $('templateUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!/\.html?$/i.test(file.name)){toast('Выбери файл .html');e.target.value='';return}try{const html=await file.text();if(!/<html|<!doctype|<body/i.test(html))throw new Error('Файл не похож на полноценный HTML-документ');setTemplate(html,file.name,$('templateCategory').value);toast('HTML-шаблон загружен для выбранной категории')}catch(err){toast(err.message||'Ошибка загрузки шаблона')}});
-const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;
+const savedPublishUrl=localStorage.getItem('leadscout_publish_url')||'';if($('publishWorkerUrl'))$('publishWorkerUrl').value=savedPublishUrl;const legacyPublishPassword=sessionStorage.getItem('leadscout_publish_password')||'';if(legacyPublishPassword&&!localStorage.getItem('leadscout_publish_password'))localStorage.setItem('leadscout_publish_password',legacyPublishPassword);sessionStorage.removeItem('leadscout_publish_password');
 renderTemplateInfo();
 renderSaved();
 showWorkspace('searchView');
