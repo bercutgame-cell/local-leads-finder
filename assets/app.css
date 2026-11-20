@@ -29,3 +29,6 @@
 
 /* Queue status filter */
 .queue-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 8px;padding:12px;background:#0d1829;border:1px solid var(--line);border-radius:12px}.queue-filter-bar label{font-size:13px;font-weight:700}.queue-filter-bar .status-select{min-width:190px}.queue-filter-bar .hint{margin:0;flex:1 1 240px}
+
+/* Queue progress counters */
+.queue-progress{grid-template-columns:repeat(3,minmax(0,1fr));margin:12px 0 16px}.queue-progress .stat strong{font-size:28px}.queue-progress .stat:last-child strong{color:#75adff}@media(max-width:520px){.queue-progress{gap:7px}.queue-progress .stat{padding:11px 9px}.queue-progress .stat strong{font-size:22px}.queue-progress .stat span{font-size:10px}}
