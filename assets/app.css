@@ -23,3 +23,6 @@
  body>.mobile-nav .ico{font-size:19px!important;line-height:1.1!important;background:none!important;padding:0!important;margin:0!important}
  body>.mobile-nav span:not(.ico){font-size:9px!important;padding:1px 5px!important;margin:0!important}
 }
+
+/* Reply review controls in queue cards */
+.reply-tools{display:grid;gap:7px;margin-top:12px;max-width:620px}.reply-tools textarea{width:100%;min-height:76px;resize:vertical;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text);font:inherit}.reply-tools label{display:block}
