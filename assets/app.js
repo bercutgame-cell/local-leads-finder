@@ -1,29 +1,6 @@
 (()=>{'use strict';
-// Load VK Bridge without blocking the Mini App document.
-let vkBridgeLoadPromise=null;
-function loadVkBridge(){
- if(window.vkBridge?.send){
-  try{Promise.resolve(window.vkBridge.send('VKWebAppInit')).catch(()=>{});}catch(e){}
-  return Promise.resolve(true);
- }
- if(vkBridgeLoadPromise)return vkBridgeLoadPromise;
- vkBridgeLoadPromise=new Promise(resolve=>{
-  let settled=false;
-  const finish=value=>{if(settled)return;settled=true;resolve(value)};
-  const script=document.createElement('script');
-  script.src='https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js';
-  script.async=true;
-  script.onload=()=>{
-   try{if(window.vkBridge?.send)Promise.resolve(window.vkBridge.send('VKWebAppInit')).catch(()=>{});}catch(e){}
-   finish(!!window.vkBridge?.send);
-  };
-  script.onerror=()=>finish(false);
-  document.head.appendChild(script);
-  window.setTimeout(()=>finish(!!window.vkBridge?.send),7000);
- });
- return vkBridgeLoadPromise;
-}
-loadVkBridge();
+// VK Mini Apps requires VKWebAppInit on every application launch.
+try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebAppInit');if(init&&typeof init.catch==='function')init.catch(()=>{});}}catch(e){}
 
 // Render mobile navigation outside the sticky header, directly under body.
 const headerNav=document.querySelector('.top .nav');
@@ -86,6 +63,6 @@ if(PAGE==='search'){found=read(KEYS.found,[]);offset=found.length;$('query').val
 if(PAGE==='leads'){renderLeads();$('leadFilter').oninput=renderLeads;$('selectAllLeads').onclick=()=>{selected=[...new Set([...selected,...leads.map(g=>g.id)])];write(KEYS.selected,selected);renderLeads()};$('queueSelected').onclick=()=>selected.slice().forEach(addToQueue);$('exportCsv').onclick=()=>{let rows=[['id','name','url','members','status','description','notes'],...leads.map(g=>[g.id,g.name,g.url,g.members,g.status,g.description,g.notes])];let csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='vk-leads.csv';a.click();URL.revokeObjectURL(a.href)};$('deleteAll').onclick=()=>{if(confirm('Удалить всю базу лидов и очередь?')){leads=[];queue=[];selected=[];saveLeads();saveQueue();renderLeads()}}}
 if(PAGE==='queue'){renderQueue();$('clearQueue').onclick=()=>{queue=[];saveQueue();renderQueue()}}
 if(PAGE==='crm'){$('crmFilter').onchange=renderCRM;renderCRM()}
-if(PAGE==='settings'){ $('token').value=token();$('messageTemplate').value=localStorage.getItem(KEYS.template)||'Здравствуйте! Нашёл ваше сообщество и хотел бы предложить сотрудничество. Подскажите, пожалуйста, кто занимается такими вопросами?';$('apiVersion').value=api.version||'5.199';$('country').value=api.country??'1';$('sort').value=api.sort??'0';$('saveSettings').onclick=()=>{localStorage.setItem(KEYS.token,$('token').value.trim());localStorage.setItem(KEYS.template,$('messageTemplate').value);api={version:$('apiVersion').value.trim()||'5.199',country:$('country').value.trim(),sort:$('sort').value};write(KEYS.api,api);setStatus('Настройки сохранены на этом устройстве.')};$('forgetToken').onclick=()=>{$('token').value='';localStorage.removeItem(KEYS.token);setStatus('Токен удалён из памяти этого браузера.')};$('copyTemplate').onclick=async()=>{try{await copyText($('messageTemplate').value);setStatus('Шаблон скопирован.')}catch(e){setStatus(e.message)}};$('vkAuth').onclick=async()=>{try{if(!await loadVkBridge()||!window.vkBridge?.send)throw Error('Не удалось загрузить VK Bridge. Проверь подключение к интернету и повтори попытку внутри VK Mini App.');let r=await window.vkBridge.send('VKWebAppGetAuthToken',{app_id:54909682,scope:'groups'});if(!r?.access_token)throw Error('VK не вернул токен доступа. Повтори авторизацию.');localStorage.setItem(KEYS.token,r.access_token);$('token').value=r.access_token;setStatus('Токен получен и сохранён на этом устройстве. Переходи в поиск.')}catch(e){setStatus(e.message)}}}
+if(PAGE==='settings'){ $('token').value=token();$('messageTemplate').value=localStorage.getItem(KEYS.template)||'Здравствуйте! Нашёл ваше сообщество и хотел бы предложить сотрудничество. Подскажите, пожалуйста, кто занимается такими вопросами?';$('apiVersion').value=api.version||'5.199';$('country').value=api.country??'1';$('sort').value=api.sort??'0';$('saveSettings').onclick=()=>{localStorage.setItem(KEYS.token,$('token').value.trim());localStorage.setItem(KEYS.template,$('messageTemplate').value);api={version:$('apiVersion').value.trim()||'5.199',country:$('country').value.trim(),sort:$('sort').value};write(KEYS.api,api);setStatus('Настройки сохранены на этом устройстве.')};$('forgetToken').onclick=()=>{$('token').value='';localStorage.removeItem(KEYS.token);setStatus('Токен удалён из памяти этого браузера.')};$('copyTemplate').onclick=async()=>{try{await copyText($('messageTemplate').value);setStatus('Шаблон скопирован.')}catch(e){setStatus(e.message)}};$('vkAuth').onclick=async()=>{try{if(!window.vkBridge?.send)throw Error('Открой эту страницу внутри VK Mini App для авторизации через VK Bridge.');await window.vkBridge.send('VKWebAppInit');let r=await window.vkBridge.send('VKWebAppGetAuthToken',{app_id:54909682,scope:'groups'});if(!r?.access_token)throw Error('VK не вернул токен доступа. Повтори авторизацию.');localStorage.setItem(KEYS.token,r.access_token);$('token').value=r.access_token;setStatus('Токен получен и сохранён на этом устройстве. Переходи в поиск.')}catch(e){setStatus(e.message)}}}
 updateBadges();document.querySelectorAll('[data-page-link="'+PAGE+'"]').forEach(x=>x.classList.add('active'));
 })();
