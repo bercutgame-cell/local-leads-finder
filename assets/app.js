@@ -2,6 +2,31 @@
 // VK Mini Apps requires VKWebAppInit on every application launch.
 try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebAppInit');if(init&&typeof init.catch==='function')init.catch(()=>{});}}catch(e){}
 
+// Keep section changes inside the VK Mini App WebView.
+let routeBusy=false;
+async function loadInternalPage(url,addHistory){
+ if(routeBusy)return;
+ routeBusy=true;
+ try{
+  const response=await fetch(url.href,{credentials:'same-origin',cache:'no-store'});
+  if(!response.ok)throw Error('Не удалось загрузить раздел');
+  const html=await response.text();
+  if(addHistory)history.pushState({vklg:true},'',url.pathname+url.search+url.hash);
+  document.open();document.write(html);document.close();
+ }catch(error){
+  routeBusy=false;
+  location.href=url.href;
+ }
+}
+document.addEventListener('click',event=>{
+ const link=event.target.closest('a[href]');
+ if(!link||link.target==='_blank'||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+ const url=new URL(link.href,location.href);
+ if(url.origin!==location.origin||!url.pathname.endsWith('.html'))return;
+ event.preventDefault();event.stopPropagation();
+ loadInternalPage(url,true);
+},true);
+window.addEventListener('popstate',()=>loadInternalPage(new URL(location.href),false));
 const $=id=>document.getElementById(id),PAGE=document.body.dataset.page;
 const KEYS={leads:'vk-lead-generator-v01-leads',token:'vk-lead-generator-v01-access-token',queue:'vk-lead-generator-queue',selected:'vk-lead-generator-selected',found:'vk-lead-generator-found-v1',template:'vk-lead-generator-template-v1',api:'vk-lead-generator-api-v1'};
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)??JSON.stringify(d))}catch(e){return d}};
