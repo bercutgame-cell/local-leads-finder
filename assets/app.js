@@ -2,7 +2,7 @@
 // VK Mini Apps requires VKWebAppInit on every application launch.
 try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebAppInit');if(init&&typeof init.catch==='function')init.catch(()=>{});}}catch(e){}
 
-// Keep section changes inside the VK Mini App WebView.
+// Render mobile navigation outside the sticky header, directly under body.\nconst headerNav=document.querySelector('.top .nav');\nif(headerNav&&!document.querySelector('body>.mobile-nav')){const mobileNav=headerNav.cloneNode(true);mobileNav.classList.add('mobile-nav');mobileNav.setAttribute('aria-label','Основное меню');document.body.appendChild(mobileNav);}\n// Keep section changes inside the VK Mini App WebView.
 let routeBusy=false;
 async function loadInternalPage(url,addHistory){
  if(routeBusy)return;
