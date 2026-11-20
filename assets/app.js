@@ -1,4 +1,7 @@
 (()=>{'use strict';
+// VK Mini Apps requires VKWebAppInit on every application launch.
+try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebAppInit');if(init&&typeof init.catch==='function')init.catch(()=>{});}}catch(e){}
+
 const $=id=>document.getElementById(id),PAGE=document.body.dataset.page;
 const KEYS={leads:'vk-lead-generator-v01-leads',token:'vk-lead-generator-v01-access-token',queue:'vk-lead-generator-queue',selected:'vk-lead-generator-selected',found:'vk-lead-generator-found-v1',template:'vk-lead-generator-template-v1',api:'vk-lead-generator-api-v1'};
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)??JSON.stringify(d))}catch(e){return d}};
