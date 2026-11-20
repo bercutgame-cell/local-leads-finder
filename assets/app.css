@@ -2,6 +2,7 @@
 
 /* v5: mobile navigation is rendered as a direct body child, outside the sticky header. */
 @media(max-width:850px){
+ .top-inner{padding-top:calc(12px + env(safe-area-inset-top))}
  .top .nav{display:none!important}
  body>.mobile-nav{
   display:grid!important;position:fixed!important;inset:auto 0 0 0!important;
