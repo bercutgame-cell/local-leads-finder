@@ -19,11 +19,13 @@ async function loadInternalPage(url,addHistory){
  }
 }
 document.addEventListener('click',event=>{
+ const button=event.target.closest('button[data-nav]');
+ if(button){event.preventDefault();event.stopImmediatePropagation();loadInternalPage(new URL(button.dataset.nav,location.href),true);return;}
  const link=event.target.closest('a[href]');
  if(!link||link.target==='_blank'||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
  const url=new URL(link.href,location.href);
  if(url.origin!==location.origin||!url.pathname.endsWith('.html'))return;
- event.preventDefault();event.stopPropagation();
+ event.preventDefault();event.stopImmediatePropagation();
  loadInternalPage(url,true);
 },true);
 window.addEventListener('popstate',()=>loadInternalPage(new URL(location.href),false));
