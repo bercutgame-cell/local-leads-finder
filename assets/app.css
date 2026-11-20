@@ -26,3 +26,6 @@
 
 /* Reply review controls in queue cards */
 .reply-tools{display:grid;gap:7px;margin-top:12px;max-width:620px}.reply-tools textarea{width:100%;min-height:76px;resize:vertical;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text);font:inherit}.reply-tools label{display:block}
+
+/* Queue status filter */
+.queue-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 8px;padding:12px;background:#0d1829;border:1px solid var(--line);border-radius:12px}.queue-filter-bar label{font-size:13px;font-weight:700}.queue-filter-bar .status-select{min-width:190px}.queue-filter-bar .hint{margin:0;flex:1 1 240px}
