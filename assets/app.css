@@ -32,3 +32,6 @@
 
 /* Queue progress counters */
 .queue-progress{grid-template-columns:repeat(3,minmax(0,1fr));margin:12px 0 16px}.queue-progress .stat strong{font-size:28px}.queue-progress .stat:last-child strong{color:#75adff}@media(max-width:520px){.queue-progress{gap:7px}.queue-progress .stat{padding:11px 9px}.queue-progress .stat strong{font-size:22px}.queue-progress .stat span{font-size:10px}}
+
+/* Queue live search */
+.queue-search{display:grid;gap:6px;margin:12px 0 4px;padding:12px;background:#0d1829;border:1px solid var(--line);border-radius:12px}.queue-search label{font-size:13px;font-weight:700}.queue-search input{width:100%;min-width:0;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:12px 13px;color:var(--text);font:inherit;outline:none}.queue-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #65a8ff20}.queue-search .hint{margin:0}
