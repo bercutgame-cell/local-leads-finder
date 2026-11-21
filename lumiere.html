@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LUMIÈRE — Manicure Atelier</title>
+<meta name="description" content="Премиальный маникюрный салон LUMIÈRE в Москве. Искусство прикосновения." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============ RESET ============ */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:#0a0908;color:#f5f0e6;overflow-x:hidden;line-height:1.6}
+  img{display:block;max-width:100%;height:auto}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
+  .serif{font-family:'Cormorant Garamond',Georgia,serif}
+  ::selection{background:rgba(212,175,55,.3);color:#fef3c7}
+  /* scrollbar */
+  ::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar-track{background:#0a0908}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(to bottom,#d4af37,#92400e);border-radius:4px}
+
+  /* ============ CURSOR ============ */
+  @media(pointer:fine){
+    *{cursor:none!important}
+  }
+  .cursor-dot,.cursor-ring{position:fixed;top:0;left:0;pointer-events:none;z-index:9999;border-radius:50%;mix-blend-mode:difference;transform:translate(-50%,-50%)}
+  .cursor-dot{width:14px;height:14px;background:#d4af37;transition:width .2s,height .2s,opacity .2s}
+  .cursor-ring{width:56px;height:56px;border:1px solid #d4af37;opacity:0;transition:opacity .2s}
+  .cursor-ring.active{opacity:1}
+  .cursor-dot.hover{width:36px;height:36px;background:#d4af37}
+
+  /* ============ SCROLL PROGRESS ============ */
+  #scroll-progress{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(to right,#fcd34d,#d4af37,#fcd34d);z-index:200;transition:width .1s linear}
+
+  /* ============ NAV ============ */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.5rem 0;transition:all .4s ease}
+  .nav.scrolled{padding:.75rem 0;background:rgba(10,9,8,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,175,55,.1)}
+  .nav-inner{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .logo{display:flex;align-items:center;gap:.75rem;opacity:0;transform:translateX(-20px);animation:fadeInLeft .8s .2s forwards}
+  .logo-mark{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fcd34d,#d4af37,#92400e);display:flex;align-items:center;justify-content:center;color:#0a0908;font-weight:700;font-size:1.125rem;font-family:'Cormorant Garamond',serif;box-shadow:0 0 20px rgba(212,175,55,.4);position:relative}
+  .logo-text-l{font-size:1.25rem;letter-spacing:.3em;color:#fef3c7;line-height:1}
+  .logo-text-s{font-size:.625rem;letter-spacing:.4em;color:rgba(212,175,55,.6);margin-top:.25rem}
+  .nav-links{display:flex;gap:.25rem;list-style:none}
+  .nav-links a{padding:.5rem 1.25rem;font-size:.875rem;letter-spacing:.05em;color:#a8a29e;transition:color .3s;position:relative}
+  .nav-links a:hover{color:#fde68a}
+  .nav-links a::after{content:'';position:absolute;left:.75rem;right:.75rem;bottom:.25rem;height:1px;background:linear-gradient(to right,transparent,#fcd34d,transparent);transform:scaleX(0);transition:transform .3s}
+  .nav-links a:hover::after{transform:scaleX(1)}
+  .nav-cta{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1.5rem;border:1px solid rgba(251,191,36,.3);border-radius:9999px;color:#fef3c7;font-size:.875rem;letter-spacing:.05em;transition:border-color .3s,box-shadow .3s}
+  .nav-cta:hover{border-color:rgba(251,191,36,.8);box-shadow:0 0 30px rgba(212,175,55,.2)}
+  .nav-cta .arrow{transition:transform .3s}
+  .nav-cta:hover .arrow{transform:translateX(4px)}
+  .burger{display:none;background:none;border:none;color:#fde68a}
+  @media(max-width:1024px){
+    .nav-links,.nav-cta{display:none}
+    .burger{display:block}
+  }
+  .mobile-menu{display:none;background:rgba(10,9,8,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(212,175,55,.1)}
+  .mobile-menu.open{display:block}
+  .mobile-menu ul{list-style:none;padding:1rem 1.5rem}
+  .mobile-menu li a{display:block;padding:.75rem 0;color:#d6d3d1;letter-spacing:.05em}
+  .mobile-menu li a.cta{color:#fcd34d}
+
+  /* ============ HERO ============ */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;padding-top:8rem;padding-bottom:5rem}
+  .hero-bg{position:absolute;inset:0;z-index:0;background:url('https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2000&auto=format&fit=crop') center/cover}
+  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom right,rgba(10,9,8,.95),rgba(10,9,8,.85),rgba(10,9,8,.6))}
+  .hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(212,175,55,.12),transparent 60%)}
+  .particle{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(251,191,36,.6);animation:floatUp 5s infinite}
+  @keyframes floatUp{0%{transform:translateY(0);opacity:0}50%{opacity:.8}100%{transform:translateY(-100px);opacity:0}}
+  .side-label{position:absolute;left:1.5rem;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:center;font-size:.625rem;letter-spacing:.5em;color:rgba(212,175,55,.6);white-space:nowrap}
+  @media(max-width:1024px){.side-label{display:none}}
+  .hero-content{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:0 1.5rem;width:100%}
+  .hero-tagline{display:flex;align-items:center;gap:.75rem;margin-bottom:2rem;opacity:0;animation:fadeUp 1s .5s forwards}
+  .hero-tagline .line{height:1px;width:48px;background:#d4af37}
+  .hero-tagline span{color:#fcd34d;font-size:.75rem;letter-spacing:.5em}
+  .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,9vw,9rem);line-height:.95;letter-spacing:-.02em;font-weight:300}
+  .hero-title .line-1{display:block;opacity:0;transform:translateY(60px);animation:fadeUp 1s .6s cubic-bezier(.22,1,.36,1) forwards}
+  .hero-title .line-2{display:block;font-style:italic;background:linear-gradient(to right,#fde68a,#d4af37,#92400e);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(60px);animation:fadeUp 1s .8s cubic-bezier(.22,1,.36,1) forwards}
+  .hero-desc{margin-top:2.5rem;font-size:1.125rem;color:#d6d3d1;max-width:36rem;font-weight:300;line-height:1.7;opacity:0;animation:fadeUp 1s 1s forwards}
+  .hero-actions{margin-top:3rem;display:flex;flex-direction:column;gap:1rem;opacity:0;animation:fadeUp 1s 1.2s forwards}
+  @media(min-width:640px){.hero-actions{flex-direction:row}}
+  .btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.75rem;padding:1rem 2rem;background:linear-gradient(to right,#fbbf24,#d97706);color:#0a0908;border-radius:9999px;font-weight:500;letter-spacing:.05em;transition:box-shadow .3s,transform .3s}
+  .btn-primary:hover{box-shadow:0 0 40px rgba(212,175,55,.5);transform:translateY(-2px)}
+  .btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:.75rem;padding:1rem 2rem;border:1px solid rgba(251,191,36,.3);border-radius:9999px;color:#fef3c7;letter-spacing:.05em;transition:border-color .3s}
+  .btn-outline:hover{border-color:rgba(251,191,36,.7)}
+  .hero-meta{margin-top:4rem;display:flex;align-items:center;gap:2rem;font-size:.75rem;letter-spacing:.3em;color:#78716c;opacity:0;animation:fadeUp 1s 1.5s forwards}
+  .hero-meta .stars{display:flex;gap:.125rem}
+  .hero-meta .divider{width:1px;height:1rem;background:#44403c}
+  .scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.75rem;opacity:0;animation:fadeIn 1s 2s forwards}
+  .scroll-indicator span{font-size:.625rem;letter-spacing:.4em;color:#78716c}
+  .scroll-line{width:1px;height:48px;background:linear-gradient(to bottom,#d4af37,transparent);animation:scrollLine 2s infinite}
+  @keyframes scrollLine{0%,100%{transform:scaleY(.6);transform-origin:top}50%{transform:scaleY(1)}}
+
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeInLeft{to{opacity:1;transform:translateX(0)}}
+  @keyframes fadeIn{to{opacity:1}}
+
+  /* ============ MARQUEE ============ */
+  .marquee{padding:2.5rem 0;border-top:1px solid rgba(212,175,55,.1);border-bottom:1px solid rgba(212,175,55,.1);overflow:hidden;white-space:nowrap}
+  .marquee-track{display:inline-flex;gap:3rem;animation:marquee 40s linear infinite}
+  .marquee-item{display:inline-flex;align-items:center;gap:3rem;font-family:'Cormorant Garamond',serif;font-size:clamp(1.5rem,4vw,3rem);font-weight:300;font-style:italic;color:#57534e}
+  @keyframes marquee{to{transform:translateX(-50%)}}
+
+  /* ============ SECTION ============ */
+  section{padding:8rem 0;position:relative}
+  .container{max-width:1280px;margin:0 auto;padding:0 1.5rem}
+  .section-label{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem}
+  .section-label .line{height:1px;width:48px;background:#d4af37}
+  .section-label span{color:#fcd34d;font-size:.75rem;letter-spacing:.5em}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2.25rem,5vw,4rem);line-height:1.1;font-weight:300;margin-bottom:2rem}
+  .section-title .italic{font-style:italic;color:#fde68a}
+  .section-title .center{display:inline-flex;align-items:center;gap:.75rem}
+  .section-title .center::before,.section-title .center::after{content:'';height:1px;width:48px;background:#d4af37;display:inline-block}
+  .text-center{text-align:center}
+  .center-label{justify-content:center}
+
+  /* ============ ABOUT ============ */
+  .about-grid{display:grid;grid-template-columns:1fr;gap:4rem;align-items:center}
+  @media(min-width:1024px){.about-grid{grid-template-columns:1fr 1fr;gap:6rem}}
+  .about-image{position:relative}
+  .about-image .img-wrap{position:relative;aspect-ratio:3/4;overflow:hidden;border-radius:2px}
+  .about-image img{width:100%;height:100%;object-fit:cover}
+  .about-image .img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,9,8,.8),transparent)}
+  .badge-float{position:absolute;bottom:-2rem;right:-2rem;background:#0a0908;border:1px solid rgba(212,175,55,.2);padding:1.5rem;max-width:200px;animation:bob 4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .badge-float .num{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;color:#fcd34d;line-height:1}
+  .badge-float .lbl{font-size:.75rem;letter-spacing:.3em;color:#a8a29e;margin-top:.25rem}
+  .about-text p{color:#a8a29e;line-height:1.8;margin-bottom:1.5rem;font-size:1.125rem;font-weight:300}
+  .about-features{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2.5rem}
+  .about-feature{border-left:1px solid rgba(212,175,55,.3);padding-left:1rem}
+  .about-feature h4{color:#fef3c7;margin-bottom:.25rem;font-size:.875rem;letter-spacing:.05em}
+  .about-feature p{font-size:.75rem;color:#78716c;margin:0}
+
+  /* ============ SERVICES ============ */
+  .services-bg{background:linear-gradient(to bottom,#0a0908,#0c0a08,#0a0908)}
+  .services-grid{display:grid;grid-template-columns:1fr;gap:4rem;align-items:start}
+  @media(min-width:1024px){.services-grid{grid-template-columns:1fr 1fr;gap:4rem}}
+  .service-item{padding:1.5rem 0;border-bottom:1px solid #292524;transition:border-color .3s;cursor:pointer;text-align:left;width:100%}
+  .service-item.active{border-bottom-color:#fbbf24}
+  .service-item:hover{border-bottom-color:rgba(251,191,36,.4)}
+  .service-header{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}
+  .service-header .left{display:flex;align-items:baseline;gap:1rem}
+  .service-num{font-size:.75rem;letter-spacing:.3em;color:#44403c;transition:color .3s}
+  .service-item.active .service-num{color:#fcd34d}
+  .service-name{font-family:'Cormorant Garamond',serif;font-size:clamp(1.5rem,3vw,2rem);font-weight:300;color:#a8a29e;transition:color .3s}
+  .service-item.active .service-name,.service-item:hover .service-name{color:#fef3c7}
+  .service-price{text-align:right;color:#fcd34d;font-size:.875rem}
+  .service-duration{color:#78716c;font-size:.75rem}
+  .service-desc{max-height:0;overflow:hidden;opacity:0;transition:max-height .4s,opacity .4s,margin .4s;color:#a8a29e;font-weight:300;line-height:1.7}
+  .service-item.active .service-desc{max-height:200px;opacity:1;margin-top:1rem}
+  .service-image{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:2px;position:sticky;top:8rem}
+  .service-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s,transform .6s}
+  .service-image img.active{opacity:1}
+  .service-image .img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,9,8),transparent 60%)}
+  .service-image .caption{position:absolute;bottom:0;left:0;right:0;padding:2rem}
+  .service-image .caption .lbl{color:#fcd34d;font-size:.75rem;letter-spacing:.4em;margin-bottom:.75rem}
+  .service-image .caption .title{font-family:'Cormorant Garamond',serif;font-size:1.875rem;font-weight:300;color:#fef3c7}
+
+  /* ============ STATS ============ */
+  .stats{background:radial-gradient(ellipse at center,rgba(212,175,55,.08),transparent 70%)}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+  @media(min-width:1024px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+  .stat{text-align:center}
+  .stat-value{font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,7vw,5rem);font-weight:300;color:#fde68a;margin-bottom:.75rem;line-height:1}
+  .stat-label{font-size:.75rem;letter-spacing:.3em;color:#78716c;text-transform:uppercase}
+
+  /* ============ GALLERY ============ */
+  .gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;grid-auto-rows:280px}
+  @media(min-width:1024px){.gallery-grid{grid-template-columns:repeat(3,1fr);gap:1rem}}
+  .gallery-item{position:relative;overflow:hidden;border-radius:2px;min-height:200px}
+  .gallery-item.span-2{grid-row:span 2}
+  .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .7s}
+  .gallery-item:hover img{transform:scale(1.1)}
+  .gallery-item .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,9,8),rgba(10,9,8,.3) 50%,transparent);opacity:.6;transition:opacity .3s}
+  .gallery-item:hover .overlay{opacity:.9}
+  .gallery-item .info{position:absolute;bottom:0;left:0;right:0;padding:1.5rem;transform:translateY(.5rem);opacity:0;transition:all .3s}
+  .gallery-item:hover .info{transform:translateY(0);opacity:1}
+  .gallery-item .info .lbl{color:#fcd34d;font-size:.625rem;letter-spacing:.3em;margin-bottom:.25rem}
+  .gallery-item .info .ttl{color:#fef3c7;font-family:'Cormorant Garamond',serif;font-weight:300}
+  .gallery-item .corner{position:absolute;top:1rem;right:1rem;width:2rem;height:2rem;border-radius:50%;background:rgba(212,175,55,.2);border:1px solid rgba(212,175,55,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+  .gallery-item:hover .corner{opacity:1}
+
+  /* ============ PRICING ============ */
+  .pricing-bg{background:linear-gradient(to bottom,#0a0908,#0c0a08,#0a0908)}
+  .pricing-toggle{display:flex;justify-content:center;margin-bottom:3rem}
+  .toggle-wrap{display:inline-flex;padding:.375rem;border:1px solid rgba(212,175,55,.2);border-radius:9999px;background:rgba(10,9,8,.5);backdrop-filter:blur(10px)}
+  .toggle-btn{padding:.5rem 1.5rem;border-radius:9999px;font-size:.875rem;letter-spacing:.05em;color:#a8a29e;transition:all .3s}
+  .toggle-btn.active{background:#fbbf24;color:#0a0908}
+  .pricing-grid{display:grid;grid-template-columns:1fr;gap:1.5rem;max-width:64rem;margin:0 auto}
+  @media(min-width:1024px){.pricing-grid{grid-template-columns:1fr 1fr}}
+  .price-card{padding:2rem;border:1px solid rgba(212,175,55,.15);border-radius:2px;background:linear-gradient(to bottom right,#0f0d0b,#0a0908);transition:border-color .3s,transform .3s}
+  .price-card:hover{border-color:rgba(251,191,36,.5);transform:translateY(-4px)}
+  .price-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+  .price-card h3{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:300;color:#fef3c7}
+  .price-card .time{display:flex;align-items:center;gap:.25rem;font-size:.75rem;color:#78716c}
+  .price-card .desc{color:#78716c;font-size:.875rem;margin-bottom:1.5rem}
+  .price-card .price{font-family:'Cormorant Garamond',serif;font-size:1.875rem;font-weight:300;color:#fde68a}
+  .price-card .arrow-corner{color:#fbbf24;transition:transform .3s}
+  .price-card:hover .arrow-corner{transform:translate(4px,-4px)}
+
+  /* ============ TESTIMONIALS ============ */
+  .testimonials-bg{background:radial-gradient(circle at 30% 50%,rgba(212,175,55,.06),transparent 50%)}
+  .testimonials-wrap{max-width:48rem;margin:0 auto;text-align:center;position:relative}
+  .quote-mark{position:absolute;top:-1.5rem;left:-.5rem;font-family:'Cormorant Garamond',serif;font-size:4rem;color:rgba(212,175,55,.2);line-height:1}
+  .testimonial-text{font-family:'Cormorant Garamond',serif;font-size:clamp(1.25rem,3vw,1.875rem);font-weight:300;font-style:italic;color:#fef3c7;line-height:1.6;margin-bottom:2rem;min-height:6rem}
+  .testimonial-stars{display:flex;justify-content:center;gap:.25rem;margin-bottom:1rem}
+  .testimonial-stars svg{width:1rem;height:1rem;fill:#fbbf24}
+  .testimonial-name{color:#fde68a;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:1.125rem}
+  .testimonial-role{color:#78716c;font-size:.875rem;letter-spacing:.05em;margin-top:.25rem}
+  .test-dots{display:flex;justify-content:center;gap:.5rem;margin-top:3rem}
+  .test-dot{height:6px;width:6px;border-radius:9999px;background:#44403c;transition:all .3s;border:none;padding:0}
+  .test-dot.active{width:48px;background:#fbbf24}
+
+  /* ============ BOOKING ============ */
+  .booking-bg{background:radial-gradient(ellipse at center,rgba(212,175,55,.1),transparent 60%)}
+  .booking-grid{display:grid;grid-template-columns:1fr;gap:4rem;align-items:center;max-width:72rem;margin:0 auto}
+  @media(min-width:1024px){.booking-grid{grid-template-columns:1fr 1fr}}
+  .contact-list{display:flex;flex-direction:column;gap:1rem}
+  .contact-item{display:flex;align-items:center;gap:1rem;color:#d6d3d1}
+  .contact-icon{width:40px;height:40px;border-radius:50%;border:1px solid rgba(212,175,55,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .contact-icon svg{width:1rem;height:1rem;color:#fcd34d}
+  .booking-form{padding:2rem;background:linear-gradient(to bottom right,#0f0d0b,#0a0908);border:1px solid rgba(212,175,55,.2);border-radius:2px}
+  @media(min-width:1024px){.booking-form{padding:2.5rem}}
+  .field{margin-bottom:1.25rem}
+  .field label{display:block;font-size:.75rem;letter-spacing:.3em;color:rgba(251,191,36,.7);margin-bottom:.5rem}
+  .field input,.field select{width:100%;background:transparent;border:none;border-bottom:1px solid #44403c;padding:.5rem 0;color:#fef3c7;outline:none;transition:border-color .3s;font-family:inherit}
+  .field input:focus,.field select:focus{border-bottom-color:#fbbf24}
+  .field select option{background:#0a0908;color:#fef3c7}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem}
+  .chip{padding:.5rem 1rem;font-size:.75rem;border-radius:9999px;border:1px solid #44403c;color:#a8a29e;transition:all .3s}
+  .chip.active{background:#fbbf24;color:#0a0908;border-color:#fbbf24}
+  .chip:hover{border-color:rgba(251,191,36,.5)}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .submit-btn{width:100%;margin-top:1rem;padding:1rem;background:linear-gradient(to right,#fbbf24,#d97706);color:#0a0908;border-radius:9999px;font-weight:500;letter-spacing:.05em;transition:box-shadow .3s;display:inline-flex;align-items:center;justify-content:center;gap:.75rem}
+  .submit-btn:hover{box-shadow:0 0 40px rgba(212,175,55,.4)}
+  .submit-btn.success{background:linear-gradient(to right,#10b981,#059669);color:#fff}
+  .success-state{text-align:center;padding:3rem 0}
+  .success-icon{width:80px;height:80px;border-radius:50%;background:linear-gradient(to bottom right,#10b981,#059669);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;animation:popIn .5s cubic-bezier(.22,1,.36,1)}
+  @keyframes popIn{from{transform:scale(0) rotate(-180deg)}to{transform:scale(1) rotate(0)}}
+  .success-icon svg{width:40px;height:40px;color:#fff}
+  .success-state h3{font-family:'Cormorant Garamond',serif;font-size:1.875rem;font-weight:300;color:#fef3c7;margin-bottom:.5rem}
+  .success-state p{color:#a8a29e;font-size:.875rem}
+
+  /* ============ FOOTER ============ */
+  footer{border-top:1px solid rgba(212,175,55,.1);padding:4rem 0;background:#0a0908;margin-top:auto}
+  .footer-grid{display:grid;grid-template-columns:1fr;gap:2rem;margin-bottom:3rem}
+  @media(min-width:1024px){.footer-grid{grid-template-columns:1fr 1fr 1fr 1fr}}
+  .footer-brand p{color:#78716c;font-size:.875rem;font-weight:300;line-height:1.7;margin-top:1rem}
+  .footer-col h4{color:#fcd34d;font-size:.75rem;letter-spacing:.3em;margin-bottom:1rem}
+  .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+  .footer-col ul a,.footer-col ul li{color:#a8a29e;font-size:.875rem}
+  .footer-col ul a:hover{color:#fde68a}
+  .newsletter{display:flex;gap:.5rem;margin-top:.75rem}
+  .newsletter input{flex:1;background:transparent;border:1px solid #44403c;border-radius:2px;padding:.5rem .75rem;color:#fef3c7;font-size:.875rem;outline:none}
+  .newsletter button{padding:.5rem 1rem;background:#fbbf24;color:#0a0908;border-radius:2px;display:flex;align-items:center;justify-content:center}
+  .footer-bottom{padding-top:2rem;border-top:1px solid #292524;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:1rem;font-size:.75rem;color:#78716c}
+  @media(min-width:768px){.footer-bottom{flex-direction:row}}
+  .footer-bottom a:hover{color:#fcd34d}
+
+  /* ============ REVEAL ============ */
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+
+  /* ============ ROOT WRAPPER ============ */
+  .root{min-height:100vh;display:flex;flex-direction:column}
+  main{flex:1}
+</style>
+</head>
+<body>
+<div id="scroll-progress"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<div class="root">
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <div class="logo-mark">L</div>
+        <div>
+          <div class="logo-text-l serif">LUMIÈRE</div>
+          <div class="logo-text-s">MANICURE · ATELIER</div>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#about">О салоне</a></li>
+        <li><a href="#services">Услуги</a></li>
+        <li><a href="#gallery">Галерея</a></li>
+        <li><a href="#pricing">Цены</a></li>
+        <li><a href="#testimonials">Отзывы</a></li>
+      </ul>
+      <a href="#booking" class="nav-cta magnetic">
+        <span>Записаться</span>
+        <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <button class="burger" id="burger" aria-label="menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <ul>
+        <li><a href="#about">О салоне</a></li>
+        <li><a href="#services">Услуги</a></li>
+        <li><a href="#gallery">Галерея</a></li>
+        <li><a href="#pricing">Цены</a></li>
+        <li><a href="#testimonials">Отзывы</a></li>
+        <li><a href="#booking" class="cta">Записаться →</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="home">
+      <div class="hero-bg" id="heroBg"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-glow"></div>
+      <div id="particles"></div>
+      <div class="side-label">EST · 2014 · MOSCOW</div>
+      <div class="hero-content">
+        <div class="hero-tagline">
+          <div class="line"></div>
+          <span>PREMIUM NAIL ATELIER</span>
+        </div>
+        <h1 class="hero-title serif">
+          <span class="line-1">Искусство</span>
+          <span class="line-2">прикосновения</span>
+        </h1>
+        <p class="hero-desc">Авторский маникюрный салон, где каждая деталь — это дань уважения красоте. Премиальные материалы, мастера с мировым именем, атмосфера истинной роскоши.</p>
+        <div class="hero-actions">
+          <a href="#booking" class="btn-primary magnetic">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span>Записаться на сеанс</span>
+          </a>
+          <a href="#gallery" class="btn-outline magnetic">
+            <span>Посмотреть работы</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+          </a>
+        </div>
+        <div class="hero-meta">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="stars">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+            </div>
+            <span>4.9 · 1247 отзывов</span>
+          </div>
+          <div class="divider" style="display:none"></div>
+          <div style="display:none;align-items:center;gap:.5rem">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+            <span>10+ лет опыта</span>
+          </div>
+        </div>
+      </div>
+      <div class="scroll-indicator">
+        <span>SCROLL</span>
+        <div class="scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <section class="marquee" style="padding:2.5rem 0">
+      <div class="marquee-track">
+        <div class="marquee-item">JAPANESE MANICURE <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+        <div class="marquee-item">FRENCH ATELIER <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+        <div class="marquee-item">NAIL ART <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+        <div class="marquee-item">GEL POLISH <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+        <div class="marquee-item">SPA RITUAL <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+        <div class="marquee-item">BIAB STRENGTHENING <svg width="24" height="24" viewBox="0 0 24 24" fill="#fbbf24" style="opacity:.4"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about">
+      <div class="container">
+        <div class="about-grid">
+          <div class="reveal about-image">
+            <div class="img-wrap">
+              <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=1200&auto=format&fit=crop" alt="Маникюр LUMIÈRE" />
+              <div class="img-overlay"></div>
+            </div>
+            <div class="badge-float">
+              <div class="num">10</div>
+              <div class="lbl">ЛЕТ СОЗДАНИЯ КРАСОТЫ</div>
+            </div>
+          </div>
+          <div>
+            <div class="reveal">
+              <div class="section-label">
+                <div class="line"></div>
+                <span>О АТЕЛЬЕ</span>
+              </div>
+            </div>
+            <h2 class="section-title serif reveal">Где мастерство<br><span class="italic">встречает эстетику</span></h2>
+            <p class="reveal" style="color:#a8a29e;line-height:1.7;margin-bottom:1.5rem;font-size:1.125rem;font-weight:300">LUMIÈRE — это не просто маникюрный салон. Это пространство, где древнее искусство ухода за руками соединяется с современными технологиями и эстетикой высокого класса.</p>
+            <p class="reveal" style="color:#a8a29e;line-height:1.7;margin-bottom:2.5rem;font-weight:300">Наши мастера проходят обучение у ведущих специалистов Милана, Токио и Парижа. Мы используем только сертифицированные материалы премиум-класса и авторские техники, чтобы каждый визит стал ритуалом красоты.</p>
+            <div class="about-features">
+              <div class="reveal"><div class="about-feature"><h4>Сертифицированные мастера</h4><p>Опыт более 8 лет</p></div></div>
+              <div class="reveal"><div class="about-feature"><h4>Премиум материалы</h4><p>Tiramisu, OPI, Essie</p></div></div>
+              <div class="reveal"><div class="about-feature"><h4>Стерильность</h4><p>Класс B автоклав</p></div></div>
+              <div class="reveal"><div class="about-feature"><h4>Авторский дизайн</h4><p>Эксклюзивные техники</p></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SERVICES ============ -->
+    <section id="services" class="services-bg">
+      <div class="container">
+        <div class="reveal text-center" style="margin-bottom:5rem">
+          <div class="section-label center-label">
+            <div class="line"></div>
+            <span>УСЛУГИ</span>
+            <div class="line"></div>
+          </div>
+          <h2 class="section-title serif">Сигнатурные <span class="italic">ритуалы</span></h2>
+        </div>
+        <div class="services-grid">
+          <div id="servicesList">
+            <button class="service-item active reveal" data-idx="0">
+              <div class="service-header">
+                <div class="left">
+                  <span class="service-num">01</span>
+                  <h3 class="service-name">Японский маникюр</h3>
+                </div>
+                <div><div class="service-price">5 500 ₽</div><div class="service-duration">90 мин</div></div>
+              </div>
+              <p class="service-desc">Ритуал безупречного ухода с использованием натуральных пудр и кремов. Укрепляет, питает и придаёт зеркальный блеск.</p>
+            </button>
+            <button class="service-item reveal" data-idx="1">
+              <div class="service-header">
+                <div class="left">
+                  <span class="service-num">02</span>
+                  <h3 class="service-name">Френч Ателье</h3>
+                </div>
+                <div><div class="service-price">4 800 ₽</div><div class="service-duration">120 мин</div></div>
+              </div>
+              <p class="service-desc">Авторская интерпретация классического французского маникюра с тончайшими линиями и идеальной геометрией.</p>
+            </button>
+            <button class="service-item reveal" data-idx="2">
+              <div class="service-header">
+                <div class="left">
+                  <span class="service-num">03</span>
+                  <h3 class="service-name">Nail Art Couture</h3>
+                </div>
+                <div><div class="service-price">от 8 000 ₽</div><div class="service-duration">180 мин</div></div>
+              </div>
+              <p class="service-desc">Эксклюзивный дизайн ручной работы: инкрустация, роспись, объёмные элементы. Создаём шедевры на ногтях.</p>
+            </button>
+            <button class="service-item reveal" data-idx="3">
+              <div class="service-header">
+                <div class="left">
+                  <span class="service-num">04</span>
+                  <h3 class="service-name">BIAB Укрепление</h3>
+                </div>
+                <div><div class="service-price">4 200 ₽</div><div class="service-duration">90 мин</div></div>
+              </div>
+              <p class="service-desc">Инновационная гель-система для укрепления натуральных ногтей. Здоровый вид и стойкость до 4 недель.</p>
+            </button>
+          </div>
+          <div class="reveal service-image">
+            <img class="active" src="https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=1200&auto=format&fit=crop" alt="" />
+            <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=1200&auto=format&fit=crop" alt="" />
+            <img src="https://images.unsplash.com/photo-1610992015734-2fc4ba51b7f5?q=80&w=1200&auto=format&fit=crop" alt="" />
+            <img src="https://images.unsplash.com/photo-1607779097040-26e80aa78e66?q=80&w=1200&auto=format&fit=crop" alt="" />
+            <div class="img-overlay"></div>
+            <div class="caption">
+              <div class="lbl">LUMIÈRE SIGNATURE</div>
+              <div class="title" id="serviceCaption">Японский маникюр</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STATS ============ -->
+    <section class="stats">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat reveal"><div class="stat-value" data-counter="12470" data-suffix="+">0</div><div class="stat-label">Довольных клиентов</div></div>
+          <div class="stat reveal"><div class="stat-value" data-counter="4.9" data-suffix="/5" data-decimals="1">0</div><div class="stat-label">Средняя оценка</div></div>
+          <div class="stat reveal"><div class="stat-value" data-counter="28">0</div><div class="stat-label">Мастеров ателье</div></div>
+          <div class="stat reveal"><div class="stat-value" data-counter="10" data-suffix=" лет">0</div><div class="stat-label">На рынке красоты</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GALLERY ============ -->
+    <section id="gallery">
+      <div class="container">
+        <div class="reveal text-center" style="margin-bottom:4rem">
+          <div class="section-label center-label">
+            <div class="line"></div>
+            <span>ПОРТФОЛИО</span>
+            <div class="line"></div>
+          </div>
+          <h2 class="section-title serif">Галерея <span class="italic">шедевров</span></h2>
+        </div>
+        <div class="gallery-grid">
+          <div class="gallery-item reveal span-2">
+            <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=800&auto=format&fit=crop" alt="Работа 1" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №01</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+          <div class="gallery-item reveal">
+            <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=800&auto=format&fit=crop" alt="Работа 2" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №02</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+          <div class="gallery-item reveal">
+            <img src="https://images.unsplash.com/photo-1610992015734-2fc4ba51b7f5?q=80&w=800&auto=format&fit=crop" alt="Работа 3" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №03</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+          <div class="gallery-item reveal span-2">
+            <img src="https://images.unsplash.com/photo-1607779097040-26e80aa78e66?q=80&w=800&auto=format&fit=crop" alt="Работа 4" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №04</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+          <div class="gallery-item reveal">
+            <img src="https://images.unsplash.com/photo-1604902396830-aca29e19b067?q=80&w=800&auto=format&fit=crop" alt="Работа 5" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №05</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+          <div class="gallery-item reveal">
+            <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?q=80&w=800&auto=format&fit=crop" alt="Работа 6" />
+            <div class="overlay"></div>
+            <div class="info"><div class="lbl">LUMIÈRE</div><div class="ttl">Авторская работа №06</div></div>
+            <div class="corner"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fde68a" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRICING ============ -->
+    <section id="pricing" class="pricing-bg">
+      <div class="container">
+        <div class="reveal text-center" style="margin-bottom:4rem">
+          <div class="section-label center-label">
+            <div class="line"></div>
+            <span>ТАРИФЫ</span>
+            <div class="line"></div>
+          </div>
+          <h2 class="section-title serif">Инвестиция в <span class="italic">красоту</span></h2>
+        </div>
+        <div class="reveal pricing-toggle">
+          <div class="toggle-wrap">
+            <button class="toggle-btn active" data-tier="signature">Signature</button>
+            <button class="toggle-btn" data-tier="express">Express</button>
+          </div>
+        </div>
+        <div class="pricing-grid" id="pricingGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section id="testimonials" class="testimonials-bg">
+      <div class="container">
+        <div class="reveal text-center" style="margin-bottom:4rem">
+          <div class="section-label center-label">
+            <div class="line"></div>
+            <span>ОТЗЫВЫ</span>
+            <div class="line"></div>
+          </div>
+          <h2 class="section-title serif">Слова <span class="italic">признательности</span></h2>
+        </div>
+        <div class="testimonials-wrap">
+          <div class="quote-mark serif">"</div>
+          <div id="testimonialContent">
+            <p class="testimonial-text">«Лучший салон, в котором я была. Атмосфера респектабельности, мастера внимательны к деталям, а результат всегда безупречен. Хожу уже 3 года.»</p>
+            <div class="testimonial-stars">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+            </div>
+            <div class="testimonial-name serif">Анастасия К.</div>
+            <div class="testimonial-role">Постоянный клиент</div>
+          </div>
+          <div class="test-dots" id="testDots"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BOOKING ============ -->
+    <section id="booking" class="booking-bg">
+      <div class="container">
+        <div class="booking-grid">
+          <div class="reveal">
+            <div class="section-label">
+              <div class="line"></div>
+              <span>ЗАПИСЬ</span>
+            </div>
+            <h2 class="section-title serif">Запишитесь<br><span class="italic">на свой ритуал</span></h2>
+            <p style="color:#a8a29e;font-weight:300;line-height:1.7;margin-bottom:2rem">Оставьте заявку, и наш администратор свяжется с вами в течение 15 минут, чтобы подтвердить запись и ответить на все вопросы.</p>
+            <div class="contact-list">
+              <div class="reveal" style="display:flex;align-items:center;gap:1rem;color:#d6d3d1">
+                <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                <span>Москва, ул. Тверская 12</span>
+              </div>
+              <div class="reveal" style="display:flex;align-items:center;gap:1rem;color:#d6d3d1">
+                <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+                <span>+7 (495) 123-45-67</span>
+              </div>
+              <div class="reveal" style="display:flex;align-items:center;gap:1rem;color:#d6d3d1">
+                <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                <span>Ежедневно 10:00 — 22:00</span>
+              </div>
+              <div class="reveal" style="display:flex;align-items:center;gap:1rem;color:#d6d3d1">
+                <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zM17.5 6.5h.01"/></svg></div>
+                <span>@lumiere.atelier</span>
+              </div>
+            </div>
+          </div>
+          <div class="reveal">
+            <form class="booking-form" id="bookingForm">
+              <div id="formFields">
+                <div class="field">
+                  <label>ВАШЕ ИМЯ</label>
+                  <input type="text" name="name" required placeholder="Анастасия" />
+                </div>
+                <div class="field">
+                  <label>ТЕЛЕФОН</label>
+                  <input type="tel" name="phone" required placeholder="+7 (___) ___-__-__" />
+                </div>
+                <div class="field">
+                  <label>УСЛУГА</label>
+                  <div class="chips" id="serviceChips">
+                    <button type="button" class="chip">Японский маникюр</button>
+                    <button type="button" class="chip">Френч Ателье</button>
+                    <button type="button" class="chip">Nail Art Couture</button>
+                    <button type="button" class="chip">BIAB Укрепление</button>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label>ДАТА</label>
+                    <input type="date" name="date" required style="color-scheme:dark" />
+                  </div>
+                  <div class="field">
+                    <label>ВРЕМЯ</label>
+                    <select name="time" required>
+                      <option value="">Выберите</option>
+                      <option>10:00</option>
+                      <option>12:00</option>
+                      <option>14:00</option>
+                      <option>16:00</option>
+                      <option>18:00</option>
+                      <option>20:00</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="submit-btn">
+                  <span>Записаться</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+              <div class="success-state" id="successState" style="display:none">
+                <div class="success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+                <h3 class="serif">Заявка отправлена!</h3>
+                <p>Мы свяжемся с вами в течение 15 минут</p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <div class="logo-mark">L</div>
+            <div>
+              <div class="logo-text-l serif">LUMIÈRE</div>
+              <div class="logo-text-s">MANICURE · ATELIER</div>
+            </div>
+          </div>
+          <p>Премиальное ателье маникюра в Москве. Создаём красоту с 2014 года.</p>
+        </div>
+        <div class="footer-col">
+          <h4>НАВИГАЦИЯ</h4>
+          <ul>
+            <li><a href="#about">О салоне</a></li>
+            <li><a href="#services">Услуги</a></li>
+            <li><a href="#gallery">Галерея</a></li>
+            <li><a href="#pricing">Цены</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>КОНТАКТЫ</h4>
+          <ul>
+            <li>Москва, Тверская 12</li>
+            <li>+7 (495) 123-45-67</li>
+            <li>hello@lumiere.ru</li>
+            <li>10:00 — 22:00</li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>ПОДПИСКА</h4>
+          <p style="color:#78716c;font-size:.875rem;margin-bottom:.75rem">Новости и эксклюзивные предложения</p>
+          <div class="newsletter">
+            <input type="email" placeholder="email@mail.ru" />
+            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0908" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 LUMIÈRE Manicure Atelier. Все права защищены.</div>
+        <div style="display:flex;gap:1.5rem">
+          <a href="#">Политика конфиденциальности</a>
+          <a href="#">Условия</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ============ CUSTOM CURSOR ============
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+  if (window.matchMedia('(pointer:fine)').matches) {
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX; mouseY = e.clientY;
+      dot.style.left = mouseX + 'px'; dot.style.top = mouseY + 'px';
+      const t = e.target;
+      const interactive = t.closest('a, button, input, select, textarea, [role=button]');
+      if (interactive) {
+        dot.classList.add('hover');
+        ring.classList.add('active');
+      } else {
+        dot.classList.remove('hover');
+        ring.classList.remove('active');
+      }
+    });
+    function animateRing() {
+      ringX += (mouseX - ringX) * 0.18;
+      ringY += (mouseY - ringY) * 0.18;
+      ring.style.left = ringX + 'px'; ring.style.top = ringY + 'px';
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+    document.addEventListener('mouseleave', () => { dot.style.opacity = 0; ring.style.opacity = 0; });
+    document.addEventListener('mouseenter', () => { dot.style.opacity = 1; });
+  } else {
+    dot.style.display = 'none'; ring.style.display = 'none';
+  }
+
+  // ============ SCROLL PROGRESS + NAV ============
+  const progress = document.getElementById('scroll-progress');
+  const nav = document.getElementById('nav');
+  function onScroll() {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const p = total > 0 ? Math.min(1, window.scrollY / total) : 0;
+    progress.style.width = (p * 100) + '%';
+    if (window.scrollY > 40) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+    // parallax hero bg
+    const heroBg = document.getElementById('heroBg');
+    if (heroBg && window.scrollY < window.innerHeight) {
+      heroBg.style.transform = `scale(${1 + window.scrollY * 0.0002}) translateY(${window.scrollY * 0.3}px)`;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ============ BURGER ============
+  const burger = document.getElementById('burger');
+  const mobileMenu = document.getElementById('mobileMenu');
+  burger?.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+  mobileMenu?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+
+  // ============ PARTICLES ============
+  const particles = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = (i * 47) % 100 + '%';
+    p.style.top = (i * 31) % 100 + '%';
+    p.style.animationDelay = (i * 0.3) + 's';
+    p.style.animationDuration = (4 + (i % 4)) + 's';
+    particles.appendChild(p);
+  }
+
+  // ============ REVEAL ON SCROLL ============
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '-80px' });
+  reveals.forEach(r => io.observe(r));
+
+  // ============ SERVICES ACCORDION ============
+  const services = [
+    { name: 'Японский маникюр' },
+    { name: 'Френч Ателье' },
+    { name: 'Nail Art Couture' },
+    { name: 'BIAB Укрепление' },
+  ];
+  const serviceItems = document.querySelectorAll('.service-item');
+  const serviceImgs = document.querySelectorAll('.service-image img');
+  const serviceCaption = document.getElementById('serviceCaption');
+  serviceItems.forEach(item => {
+    item.addEventListener('mouseenter', () => activateService(item));
+    item.addEventListener('click', () => activateService(item));
+  });
+  function activateService(item) {
+    serviceItems.forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    const idx = parseInt(item.dataset.idx);
+    serviceImgs.forEach((img, i) => img.classList.toggle('active', i === idx));
+    serviceCaption.textContent = services[idx].name;
+  }
+
+  // ============ COUNTERS ============
+  const counters = document.querySelectorAll('[data-counter]');
+  const counterIO = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCounter(e.target);
+        counterIO.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(c => counterIO.observe(c));
+  function animateCounter(el) {
+    const target = parseFloat(el.dataset.counter);
+    const suffix = el.dataset.suffix || '';
+    const decimals = parseInt(el.dataset.decimals || '0');
+    const duration = 2000;
+    let start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      const t = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = target * eased;
+      el.textContent = val.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ============ PRICING ============
+  const pricingData = {
+    signature: [
+      { name: 'Японский маникюр', desc: 'Ритуал с пудрой + уход', price: '5 500 ₽', time: '90 мин' },
+      { name: 'Френч Ателье', desc: 'Авторский дизайн', price: '4 800 ₽', time: '120 мин' },
+      { name: 'Nail Art Couture', desc: 'Роспись + инкрустация', price: 'от 8 000 ₽', time: '180 мин' },
+      { name: 'BIAB Укрепление', desc: 'Защита + стойкость', price: '4 200 ₽', time: '90 мин' },
+    ],
+    express: [
+      { name: 'Экспресс-маникюр', desc: 'Базовый уход', price: '2 200 ₽', time: '40 мин' },
+      { name: 'Покрытие гель-лак', desc: 'Без дизайна', price: '2 800 ₽', time: '60 мин' },
+      { name: 'Снятие покрытия', desc: 'Включено в уход', price: '800 ₽', time: '20 мин' },
+      { name: 'Ремонт ногтя', desc: '1 элемент', price: '300 ₽', time: '10 мин' },
+    ],
+  };
+  const pricingGrid = document.getElementById('pricingGrid');
+  function renderPricing(tier) {
+    pricingGrid.innerHTML = '';
+    pricingData[tier].forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'price-card';
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      card.innerHTML = `
+        <div class="price-card-head">
+          <h3 class="serif">${item.name}</h3>
+          <div class="time">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${item.time}
+          </div>
+        </div>
+        <p class="desc">${item.desc}</p>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div class="price">${item.price}</div>
+          <svg class="arrow-corner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+        </div>
+      `;
+      pricingGrid.appendChild(card);
+      setTimeout(() => {
+        card.style.transition = 'opacity .4s, transform .4s';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, i * 80);
+    });
+  }
+  renderPricing('signature');
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPricing(btn.dataset.tier);
+    });
+  });
+
+  // ============ TESTIMONIALS ============
+  const testimonials = [
+    { name: 'Анастасия К.', role: 'Постоянный клиент', text: 'Лучший салон, в котором я была. Атмосфера респектабельности, мастера внимательны к деталям, а результат всегда безупречен. Хожу уже 3 года.', rating: 5 },
+    { name: 'Елена В.', role: 'Бизнес-леди', text: 'LUMIÈRE — моё место силы. Здесь я отдыхаю душой и выхожу с идеальным маникюром, который держится месяц. Сервис премиум-класса.', rating: 5 },
+    { name: 'Мария Д.', role: 'Невеста', text: 'Делала свадебный дизайн — это была настоящая магия. Тончайшая роспись, инкрустация, всё идеально. Гости были в восторге!', rating: 5 },
+  ];
+  const dotsWrap = document.getElementById('testDots');
+  const testContent = document.getElementById('testimonialContent');
+  let testIdx = 0;
+  testimonials.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'test-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Отзыв ' + (i+1));
+    dot.addEventListener('click', () => showTestimonial(i));
+    dotsWrap.appendChild(dot);
+  });
+  function renderStars(n) {
+    return Array(n).fill('<svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>').join('');
+  }
+  function showTestimonial(i) {
+    testIdx = i;
+    testContent.style.opacity = 0;
+    testContent.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      const t = testimonials[i];
+      testContent.innerHTML = `
+        <p class="testimonial-text">«${t.text}»</p>
+        <div class="testimonial-stars">${renderStars(t.rating)}</div>
+        <div class="testimonial-name serif">${t.name}</div>
+        <div class="testimonial-role">${t.role}</div>
+      `;
+      testContent.style.transition = 'opacity .4s, transform .4s';
+      testContent.style.opacity = 1;
+      testContent.style.transform = 'translateY(0)';
+    }, 200);
+    document.querySelectorAll('.test-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+  }
+  setInterval(() => showTestimonial((testIdx + 1) % testimonials.length), 6000);
+
+  // ============ CHIPS ============
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // ============ BOOKING FORM ============
+  const form = document.getElementById('bookingForm');
+  const formFields = document.getElementById('formFields');
+  const successState = document.getElementById('successState');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formFields.style.display = 'none';
+    successState.style.display = 'block';
+    setTimeout(() => {
+      formFields.style.display = 'block';
+      successState.style.display = 'none';
+      form.reset();
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    }, 5000);
+  });
+
+  // ============ MAGNETIC BUTTONS ============
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.addEventListener('mousemove', (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left - rect.width / 2) * 0.3;
+      const y = (e.clientY - rect.top - rect.height / 2) * 0.3;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = 'translate(0, 0)';
+    });
+  });
+</script>
+</body>
+</html>
