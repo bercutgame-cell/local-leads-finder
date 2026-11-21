@@ -32,6 +32,33 @@ body{background:#070808;color:#f5f1e9}
 a.btn,a.btn:visited{color:var(--gold2)}
 a.btn.gold,a.btn.gold:visited{color:#17130b}
 @media(max-width:540px){.btn{border-radius:13px;padding:13px 16px}.hero-photo,.approach-photo,.gallery div{border-radius:14px}}
+
+/* Mobile layout correction: compact service tiles and safe text gutters */
+html,body{max-width:100%;overflow-x:hidden}
+@media(max-width:540px){
+  .wrap{width:100%;max-width:100%;padding-left:22px;padding-right:22px}
+  .section{padding-top:58px;padding-bottom:58px}
+  .head{min-width:0;gap:18px;margin-bottom:26px}
+  .head>div,.head>p,.head h2,.step,.service{min-width:0;max-width:100%}
+  .head h2{font-size:clamp(34px,8.4vw,43px);line-height:1.04;letter-spacing:-.02em;overflow-wrap:break-word}
+  .head p{font-size:12px;line-height:1.75}
+  .services{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .service{min-height:0;height:100%;padding:17px 14px 18px;border-radius:14px}
+  .service .num{right:12px;top:10px;font-size:12px}
+  .service .ico{font-size:21px;margin:0 0 12px}
+  .service h3{font-size:17px;line-height:1.15;overflow-wrap:anywhere}
+  .service p{font-size:9px;line-height:1.55;overflow-wrap:anywhere}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;row-gap:28px}
+  .step h3{font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+  .step p{font-size:10px;line-height:1.65;overflow-wrap:anywhere}
+  .hero h1{font-size:clamp(39px,10vw,47px);overflow-wrap:break-word}
+  .price{grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding-inline:0}
+  .price b{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+  .price small{font-size:12px;white-space:nowrap}
+  .booking-grid,.approach-grid,.calc-grid{min-width:0}
+  .fields label,.fields input,.fields select,.fields textarea{min-width:0;max-width:100%}
+}
+
 </style></head><body>
 <div class="topline"><i></i> ДЕМОНСТРАЦИОННЫЙ КОНЦЕПТ САЙТА <span>/</span> NOVA DIGITAL</div>
 <header class="header"><a class="brand" href="#top">AUTOPRO<span>SERVICE</span></a><nav class="nav"><a href="#services">Услуги</a><a href="#approach">О сервисе</a><a href="#gallery">Галерея</a><a href="#prices">Цены</a><a href="#booking">Контакты</a></nav><a class="btn" href="#booking">Записаться </a></header>
