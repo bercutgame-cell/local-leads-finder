@@ -59,6 +59,42 @@ html,body{max-width:100%;overflow-x:hidden}
   .fields label,.fields input,.fields select,.fields textarea{min-width:0;max-width:100%}
 }
 
+
+/* AUTOPRO mobile hotfix v2 — stronger selectors for narrow Safari/WebView */
+@media screen and (max-width: 850px) {
+  html, body { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
+  body { margin:0 !important; }
+  .wrap, section.section.wrap, .section .wrap {
+    width:100% !important; max-width:100% !important;
+    padding-left:22px !important; padding-right:22px !important;
+    margin-left:auto !important; margin-right:auto !important;
+  }
+  .head { display:block !important; width:100% !important; min-width:0 !important; }
+  .head > div, .head > p { width:100% !important; max-width:100% !important; min-width:0 !important; }
+  .head h2 { max-width:100% !important; font-size:clamp(34px, 7.4vw, 48px) !important; line-height:1.04 !important; letter-spacing:-.02em !important; overflow-wrap:anywhere !important; word-break:normal !important; }
+  .head p { font-size:12px !important; line-height:1.7 !important; }
+  .services { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; width:100% !important; }
+  .service { min-width:0 !important; width:100% !important; min-height:0 !important; height:auto !important; padding:16px 13px !important; border-radius:14px !important; }
+  .service .num { top:9px !important; right:10px !important; font-size:11px !important; }
+  .service .ico { margin:0 0 10px !important; font-size:20px !important; }
+  .service h3 { font-size:clamp(15px, 2.5vw, 18px) !important; line-height:1.15 !important; overflow-wrap:anywhere !important; }
+  .service p { font-size:10px !important; line-height:1.5 !important; overflow-wrap:anywhere !important; }
+  .steps { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:24px 16px !important; width:100% !important; }
+  .step { min-width:0 !important; max-width:100% !important; }
+  .step h3,.step p { overflow-wrap:anywhere !important; }
+  .price { display:grid !important; grid-template-columns:22px minmax(0,1fr) auto !important; gap:7px !important; }
+  .price b { min-width:0 !important; font-size:14px !important; line-height:1.25 !important; overflow-wrap:anywhere !important; }
+  .price small { font-size:12px !important; white-space:nowrap !important; }
+  .hero h1 { max-width:100% !important; font-size:clamp(38px, 9vw, 54px) !important; overflow-wrap:anywhere !important; }
+  .fields label,.fields input,.fields select,.fields textarea { min-width:0 !important; max-width:100% !important; }
+}
+@media screen and (max-width:390px) {
+  .wrap, section.section.wrap, .section .wrap { padding-left:18px !important; padding-right:18px !important; }
+  .services { gap:8px !important; }
+  .service { padding:14px 11px !important; }
+  .service h3 { font-size:15px !important; }
+}
+
 </style></head><body>
 <div class="topline"><i></i> ДЕМОНСТРАЦИОННЫЙ КОНЦЕПТ САЙТА <span>/</span> NOVA DIGITAL</div>
 <header class="header"><a class="brand" href="#top">AUTOPRO<span>SERVICE</span></a><nav class="nav"><a href="#services">Услуги</a><a href="#approach">О сервисе</a><a href="#gallery">Галерея</a><a href="#prices">Цены</a><a href="#booking">Контакты</a></nav><a class="btn" href="#booking">Записаться </a></header>
