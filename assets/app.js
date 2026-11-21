@@ -54,23 +54,23 @@ const template=()=>$( 'messageTemplate')?.value?.trim()||localStorage.getItem(KE
 function updateBadges(){document.querySelectorAll('[data-count="leads"]').forEach(x=>x.textContent=leads.length);document.querySelectorAll('[data-count="queue"]').forEach(x=>x.textContent=queue.length)}
 function scoreLead(g){
  const niche=(g.niche&&g.niche!=='generic')?g.niche:detectNiche([g.name||'',g.description||''].join(' '));
- const nichePoints=niche!=='generic'?40:10;
+ const nichePoints=niche!=='generic'?30:15;
  const members=Number(g.members||0);
- const audiencePoints=members<=0?0:members<100?3:members<500?8:members<2000?14:members<10000?20:members<50000?25:20;
+ const audiencePoints=members<=0?0:members<100?5:members<500?10:members<2000?15:members<10000?20:25;
  const description=String(g.description||'').trim();
- const descriptionPoints=description.length>=80?10:description.length>0?5:0;
- const signals=['цена','прайс','запис','заказ','доставк','консультац','акци','скидк','адрес','телефон','график','работаем','услуг','отзыв','портфолио','меню','мастер'];
+ const descriptionPoints=description.length>=200?15:description.length>=80?10:description.length>0?5:0;
+ const signals=['цена','прайс','запис','заказ','доставк','консультац','акци','скидк','адрес','телефон','график','работаем','услуг','отзыв','портфолио','меню','мастер','студия','салон','кафе','ресторан','бронь','бронир','заявк','сайт','онлайн','магазин','товар'];
  const matched=signals.filter(word=>(description+' '+String(g.name||'')).toLowerCase().includes(word));
- const commercialPoints=Math.min(25,matched.length*5);
+ const commercialPoints=Math.min(30,matched.length*5);
  const score=Math.max(0,Math.min(100,nichePoints+audiencePoints+descriptionPoints+commercialPoints));
  const known=[niche!=='generic',members>0,description.length>0].filter(Boolean).length;
  const confidence=known===3?'Высокая':known===2?'Средняя':'Низкая';
- const priority=score>=75?'Высокий':score>=50?'Средний':'Низкий';
+ const priority=score>=70?'Высокий':score>=45?'Средний':'Низкий';
  const reasons=[
-  'Соответствие нише: '+nichePoints+'/40'+(niche!=='generic'?' — '+nicheLabel(niche):' — ниша не определена'),
+  'Соответствие нише: '+nichePoints+'/30'+(niche!=='generic'?' — '+nicheLabel(niche):' — ниша пока не определена'),
   'Размер сообщества: '+audiencePoints+'/25'+(members?' — '+members.toLocaleString('ru-RU')+' участников':' — данные отсутствуют'),
-  'Описание: '+descriptionPoints+'/10'+(description?' — '+description.length+' символов':' — не заполнено'),
-  'Коммерческие сигналы: '+commercialPoints+'/25'+(matched.length?' — '+matched.slice(0,5).join(', '):' — не найдены')
+  'Описание: '+descriptionPoints+'/15'+(description?' — '+description.length+' символов':' — не заполнено'),
+  'Коммерческие сигналы: '+commercialPoints+'/30'+(matched.length?' — '+matched.slice(0,6).join(', '):' — явные сигналы не найдены')
  ];
  return{score,priority,confidence,reasons};
 }
