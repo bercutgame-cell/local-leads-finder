@@ -8,9 +8,9 @@ const isInfographics=location.pathname.includes('infographics');
 if(headerNav&&!isInfographics&&!document.querySelector('body>.mobile-nav')){const mobileNav=headerNav.cloneNode(true);mobileNav.classList.add('mobile-nav');mobileNav.setAttribute('aria-label','Основное меню');document.body.appendChild(mobileNav);}
 if(isInfographics&&!document.querySelector('body>.infographics-mobile-nav')){
  const current=location.pathname.split('/').pop()||'infographics.html';
- const items=[['infographics.html','⌂','Обзор'],['infographics-groups.html','⌕','Группы'],['infographics-audience.html','♙','Подписчики']];
+ const items=[['infographics.html','grid-2x2','Обзор'],['infographics-groups.html','search','Группы'],['infographics-audience.html','users','Контакты'],['infographics-settings.html','settings','Настройки']];
  const nav=document.createElement('nav');nav.className='mobile-nav infographics-mobile-nav';nav.setAttribute('aria-label','Разделы инфографики');
- nav.innerHTML=items.map(([href,ico,label])=>'<a href="./'+href+'" '+(current===href?'class="active" aria-current="page"':'')+'><span class="ico">'+ico+'</span><span>'+label+'</span></a>').join('');
+ nav.innerHTML=items.map(([href,ico,label])=>'<a href="./'+href+'" '+(current===href?'class="active" aria-current="page"':'')+'><span class="ico" aria-hidden="true">'+({ 'grid-2x2':'▦','search':'⌕','users':'♙','settings':'⚙'}[ico])+'</span><span>'+label+'</span></a>').join('');
  document.body.appendChild(nav);
 }
 // Keep section changes inside the VK Mini App WebView.
