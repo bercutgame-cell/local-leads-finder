@@ -4,7 +4,15 @@ try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebA
 
 // Render mobile navigation outside the sticky header, directly under body.
 const headerNav=document.querySelector('.top .nav');
-if(headerNav&&!document.querySelector('body>.mobile-nav')){const mobileNav=headerNav.cloneNode(true);mobileNav.classList.add('mobile-nav');mobileNav.setAttribute('aria-label','Основное меню');document.body.appendChild(mobileNav);}
+const isInfographics=location.pathname.includes('infographics');
+if(headerNav&&!isInfographics&&!document.querySelector('body>.mobile-nav')){const mobileNav=headerNav.cloneNode(true);mobileNav.classList.add('mobile-nav');mobileNav.setAttribute('aria-label','Основное меню');document.body.appendChild(mobileNav);}
+if(isInfographics&&!document.querySelector('body>.infographics-mobile-nav')){
+ const current=location.pathname.split('/').pop()||'infographics.html';
+ const items=[['infographics.html','⌂','Обзор'],['infographics-groups.html','⌕','Группы'],['infographics-audience.html','♙','Подписчики']];
+ const nav=document.createElement('nav');nav.className='mobile-nav infographics-mobile-nav';nav.setAttribute('aria-label','Разделы инфографики');
+ nav.innerHTML=items.map(([href,ico,label])=>'<a href="./'+href+'" '+(current===href?'class="active" aria-current="page"':'')+'><span class="ico">'+ico+'</span><span>'+label+'</span></a>').join('');
+ document.body.appendChild(nav);
+}
 // Keep section changes inside the VK Mini App WebView.
 let routeBusy=false;
 async function loadInternalPage(url,addHistory){
