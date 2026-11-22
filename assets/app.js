@@ -6,11 +6,11 @@ try{const bridge=window.vkBridge;if(bridge?.send){const init=bridge.send('VKWebA
 const headerNav=document.querySelector('.top .nav');
 const isInfographics=location.pathname.includes('infographics');
 if(headerNav&&!isInfographics&&!document.querySelector('body>.mobile-nav')){const mobileNav=headerNav.cloneNode(true);mobileNav.classList.add('mobile-nav');mobileNav.setAttribute('aria-label','Основное меню');document.body.appendChild(mobileNav);}
-if(isInfographics&&!document.querySelector('body>.infographics-mobile-nav')){
+if(isInfographics&&!document.querySelector('body>.mobile-nav')){
  const current=location.pathname.split('/').pop()||'infographics.html';
- const items=[['infographics.html','grid-2x2','Обзор'],['infographics-groups.html','search','Группы'],['infographics-audience.html','users','Контакты'],['infographics-settings.html','settings','Настройки']];
- const nav=document.createElement('nav');nav.className='mobile-nav infographics-mobile-nav';nav.setAttribute('aria-label','Разделы инфографики');
- nav.innerHTML=items.map(([href,ico,label])=>'<a href="./'+href+'" '+(current===href?'class="active" aria-current="page"':'')+'><span class="ico" aria-hidden="true">'+({ 'grid-2x2':'▦','search':'⌕','users':'♙','settings':'⚙'}[ico])+'</span><span>'+label+'</span></a>').join('');
+ const items=[['index.html','⇄','Проекты'],['infographics-groups.html','⌕','Группы'],['infographics-audience.html','▤','Моя база'],['infographics-audience.html#outreach-queue','☷','Очередь'],['infographics-audience.html#crm','◈','CRM'],['infographics-settings.html','⚙','Настройки']];
+ const nav=document.createElement('nav');nav.className='mobile-nav';nav.setAttribute('aria-label','Основное меню');
+ nav.innerHTML=items.map(([href,ico,label])=>{const file=href.split('#')[0],active=file===current&&(label!=='Очередь'&&label!=='CRM');return '<a href="./'+href+'" '+(active?'class="active" aria-current="page"':'')+'><span class="ico">'+ico+'</span>'+label+'</a>'}).join('');
  document.body.appendChild(nav);
 }
 // Keep section changes inside the VK Mini App WebView.
