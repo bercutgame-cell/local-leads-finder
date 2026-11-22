@@ -154,3 +154,34 @@ body>.mobile-nav a.active,body>.mobile-nav button.active{background:#302719;colo
  .brand img{width:38px;height:38px}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+
+/* NOVA DIGITAL premium bottom navigation — shared by Sites and Infographics */
+@media(max-width:850px){
+ body>.mobile-nav{
+  background:linear-gradient(180deg,rgba(27,25,21,.985) 0%,rgba(10,10,11,.99) 42%,#090a0b 100%)!important;
+  border-top:1px solid #92713c!important;
+  box-shadow:0 -10px 34px rgba(0,0,0,.48),0 -1px 14px rgba(201,158,77,.10)!important;
+  -webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;
+ }
+ body>.mobile-nav a,body>.mobile-nav button{
+  color:#aaa397!important;
+  border:1px solid transparent!important;
+  border-radius:11px!important;
+  transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease!important;
+  text-shadow:0 1px 2px #0008;
+ }
+ body>.mobile-nav a .ico,body>.mobile-nav button .ico{
+  color:#c5a66b!important;
+  font-size:20px!important;
+  filter:drop-shadow(0 1px 4px rgba(201,158,77,.18));
+ }
+ body>.mobile-nav a.active,body>.mobile-nav button.active{
+  color:#ffe5ae!important;
+  background:linear-gradient(145deg,rgba(91,68,34,.68),rgba(38,31,21,.94))!important;
+  border-color:#92713c!important;
+  box-shadow:inset 0 1px 0 rgba(255,225,164,.13),0 3px 12px rgba(0,0,0,.22)!important;
+ }
+ body>.mobile-nav a.active .ico,body>.mobile-nav button.active .ico{color:#f0d394!important}
+ body>.mobile-nav a:active,body>.mobile-nav button:active{background:#332819!important;color:#ffe5ae!important}
+ body>.mobile-nav span:not(.ico){background:#49371f!important;color:#f0d394!important;border:1px solid #8b6834!important}
+}
